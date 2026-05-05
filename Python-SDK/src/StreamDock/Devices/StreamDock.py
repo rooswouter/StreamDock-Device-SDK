@@ -338,9 +338,9 @@ class StreamDock(ABC):
     def set_key_image(self, key, path) -> int | None:
         pass
 
-    # @abstractmethod
-    # def set_key_imageData(self, key, image, width=126, height=126):
-    #     pass
+    @abstractmethod
+    def set_key_imageData(self, key, image, width=126, height=126):
+         pass
 
     @abstractmethod
     def set_brightness(self, percent):

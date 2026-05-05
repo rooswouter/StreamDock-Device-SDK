@@ -114,10 +114,27 @@ class StreamDock293s(StreamDock):
                 print(f"Error: The image file '{path}' does not exist.")
                 return -1
 
+            image = Image.open(path)
+            return self.set_key_imageData(key, image)
+
+        except Exception as e:
+            print(f"Error: {e}")
+            return -1
+            
+    # Set device key icon image from data 85 * 85
+    def set_key_imageData(self, key, image):
+        try:
+            if isinstance(key, int):
+                if key not in range(1, 19):
+                    print(f"key '{key}' out of range. you should set (1 ~ 18)")
+                    return -1
+                logical_key = ButtonKey(key)
+            else:
+                logical_key = key
+
             # Get hardware key value
             hardware_key = self.get_image_key(logical_key)
 
-            image = Image.open(path)
             if hardware_key in range(1, 16):
                 # icon
                 rotated_image = to_native_key_format(self, image)
