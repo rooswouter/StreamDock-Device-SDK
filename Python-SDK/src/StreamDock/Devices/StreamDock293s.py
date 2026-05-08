@@ -86,18 +86,28 @@ class StreamDock293s(StreamDock):
     # Set device background image 854 * 480
     def set_touchscreen_image(self, image):
         image = Image.open(image)
-        image = to_native_touchscreen_format(self, image)
-        width, height = image.size
-        bgr_data = []
+        return self.set_background_image_data(image)
 
-        for x in range(width):
-            for y in range(height):
-                r,g,b = image.getpixel((x,y))
-                bgr_data.extend([b,g,r])
-        arr_type = ctypes.c_char * len(bgr_data)
-        arr_ctypes = arr_type(*bgr_data)
+    def set_background_image_data(self, image):
+        #image = to_native_touchscreen_format(self, image)
+        image = image.rotate(90, expand=True)
+        width = 800
+        height = 480
+        button_height = 100
+        image = image.resize((height, width))
+        image = image.convert("RGB")
 
-        return self.transport.setBackgroundImg(ctypes.cast(arr_ctypes, ctypes.POINTER(ctypes.c_ubyte)),width * height * 3)
+        # Split into three horizontal strips of size 85
+        border_size = (height - button_height * 3) / 2
+        for i in range(3):
+            buffered = io.BytesIO()
+            start_x = (border_size + button_height) * i
+            image_cropped = image.crop((start_x, 0, start_x + button_height, width))
+            image_cropped.save(buffered, "JPEG")
+
+            hardware_key = self.get_image_key(16 + i)
+            returnvalue = self.transport.set_key_image_stream(buffered.getvalue(), hardware_key)
+        return returnvalue
 
     # Set device key icon image 85 * 85
     def set_key_image(self, key, path):
@@ -120,7 +130,7 @@ class StreamDock293s(StreamDock):
         except Exception as e:
             print(f"Error: {e}")
             return -1
-            
+
     # Set device key icon image from data 85 * 85
     def set_key_imageData(self, key, image):
         try:
@@ -141,9 +151,9 @@ class StreamDock293s(StreamDock):
             elif hardware_key in range(16, 19):
                 # second screen
                 rotated_image = to_native_seondscreen_format(self, image)
-            rotated_image.save("Temporary.jpg", "JPEG", subsampling=0, quality=100)
-            returnvalue = self.transport.setKeyImg(bytes("Temporary.jpg",'utf-8'), hardware_key)
-            os.remove("Temporary.jpg")
+            buffered = io.BytesIO()
+            rotated_image.save(buffered, "JPEG")
+            returnvalue = self.transport.set_key_image_stream(buffered.getvalue(), hardware_key)
             return returnvalue
 
         except Exception as e:

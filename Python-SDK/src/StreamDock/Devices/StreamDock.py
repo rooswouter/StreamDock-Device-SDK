@@ -341,7 +341,9 @@ class StreamDock(ABC):
     @abstractmethod
     def set_key_imageData(self, key, image, width=126, height=126):
          pass
-
+    def set_key_image_stream(self, jpeg_data: bytes, key_index: int) -> None:
+        self.transport.set_key_image_stream(jpeg_data, key_index)
+        
     @abstractmethod
     def set_brightness(self, percent):
         pass
