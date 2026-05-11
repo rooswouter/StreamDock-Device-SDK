@@ -86,76 +86,57 @@ class StreamDock293s(StreamDock):
     # Set device background image 854 * 480
     def set_touchscreen_image(self, image):
         image = Image.open(image)
-        return self.set_background_image_data(image)
+        image = to_native_touchscreen_format(self, image)
+        width, height = image.size
+        bgr_data = []
 
-    def set_background_image_data(self, image):
-        #image = to_native_touchscreen_format(self, image)
-        image = image.rotate(90, expand=True)
-        width = 800
-        height = 480
-        button_height = 100
-        image = image.resize((height, width))
-        image = image.convert("RGB")
+        for x in range(width):
+            for y in range(height):
+                r,g,b = image.getpixel((x,y))
+                bgr_data.extend([b,g,r])
+        arr_type = ctypes.c_char * len(bgr_data)
+        arr_ctypes = arr_type(*bgr_data)
 
-        # Split into three horizontal strips of size 85
-        border_size = (height - button_height * 3) / 2
-        for i in range(3):
-            buffered = io.BytesIO()
-            start_x = (border_size + button_height) * i
-            image_cropped = image.crop((start_x, 0, start_x + button_height, width))
-            image_cropped.save(buffered, "JPEG")
+        return self.transport.setBackgroundImg(ctypes.cast(arr_ctypes, ctypes.POINTER(ctypes.c_ubyte)),width * height * 3)
 
-            hardware_key = self.get_image_key(16 + i)
-            returnvalue = self.transport.set_key_image_stream(buffered.getvalue(), hardware_key)
-        return returnvalue
 
     # Set device key icon image 85 * 85
     def set_key_image(self, key, path):
         try:
-            if isinstance(key, int):
-                if key not in range(1, 19):
-                    print(f"key '{key}' out of range. you should set (1 ~ 18)")
-                    return -1
-                logical_key = ButtonKey(key)
-            else:
-                logical_key = key
-
             if not os.path.exists(path):
                 print(f"Error: The image file '{path}' does not exist.")
                 return -1
-
             image = Image.open(path)
             return self.set_key_imageData(key, image)
-
         except Exception as e:
             print(f"Error: {e}")
-            return -1
+        return -1
 
-    # Set device key icon image from data 85 * 85
-    def set_key_imageData(self, key, image):
+    # Set device key icon image from data width / height
+    def set_key_imageData(self, key, image, width=85, height=85):
         try:
             if isinstance(key, int):
                 if key not in range(1, 19):
                     print(f"key '{key}' out of range. you should set (1 ~ 18)")
                     return -1
-                logical_key = ButtonKey(key)
-            else:
-                logical_key = key
+                    logical_key = ButtonKey(key)
+                else:
+                    logical_key = key
 
-            # Get hardware key value
-            hardware_key = self.get_image_key(logical_key)
-
-            if hardware_key in range(1, 16):
+                # Get hardware key value
+                hardware_key = self.get_image_key(logical_key)
+                if hardware_key in range(1, 16):
                 # icon
-                rotated_image = to_native_key_format(self, image)
-            elif hardware_key in range(16, 19):
-                # second screen
-                rotated_image = to_native_seondscreen_format(self, image)
-            buffered = io.BytesIO()
-            rotated_image.save(buffered, "JPEG")
-            returnvalue = self.transport.set_key_image_stream(buffered.getvalue(), hardware_key)
-            return returnvalue
+                    rotated_image = to_native_key_format(self, image)
+                elif hardware_key in range(16, 19):
+                    # second screen
+                    rotated_image = to_native_seondscreen_format(self, image)
 
+                buffered = io.BytesIO()
+                rotated_image.save(buffered, "JPEG")
+                returnvalue = self.transport.set_key_image_stream(buffered.getvalue(), hardware_key)
+
+                return returnvalue
         except Exception as e:
             print(f"Error: {e}")
             return -1

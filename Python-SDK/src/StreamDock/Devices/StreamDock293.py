@@ -129,7 +129,6 @@ class StreamDock293(StreamDock):
         except Exception as e:
             print(f"Error: {e}")
             return -1
-
     # Get device firmware version
     def get_serial_number(self):
         return self.serial_number
