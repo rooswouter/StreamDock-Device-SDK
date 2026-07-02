@@ -150,7 +150,7 @@ class StreamDock(ABC):
 
     # Open device
     def open(self):
-        res1 = self.transport.open(bytes(self.path, "utf-8"))
+        res1 = self.transport.open(self.path)
         if not res1:
             return False
         self._notify_on_close = True
