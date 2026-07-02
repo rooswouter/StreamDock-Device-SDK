@@ -79,9 +79,12 @@ class LibUSBHIDAPI:
             return self._DEFAULT_REPORT_SIZE
 
     def _pad(self, buffer: bytes):
-        return buffer + b"\x00" * (self._report_size - len(buffer))
+        target = self._output_report_size if self._output_report_size > 0 else self._DEFAULT_REPORT_SIZE + 1
+        if len(buffer) >= target:
+            return buffer[:target]
+        return buffer + b"\x00" * (target - len(buffer))
 
-    def _crt(self, cmd: str, params: bytes = b"", bulk: bytes = b"", crt: bytes = b"\x00CRT\x00\x00"):
+    def _crt(self, cmd: str, params: bytes = b"", bulk: bytes = b"", crt: bytes | None = None):
         """
         Send a `CRT` command to the device.
 
@@ -91,20 +94,23 @@ class LibUSBHIDAPI:
             bulk: Bulk data that will be streamed to the device after the command has been sent. Usually image data.
             crt: Allows to override the `CRT` command header. Useful for non-standard commands.
         """
+        if crt is None:
+            crt = bytes([self._report_id])  + b"CRT\x00\x00"
         with self._write_lock:
             if self._device is None:
                 return
             pkt = crt + cmd.encode("ascii") + params
             pkt = self._pad(pkt)
-            #print(f"write {pkt}")
-            self._device.write(self._pad(pkt))
+            result = self._device.write(self._pad(pkt))
+
             if len(bulk) > 0:
                 for i in range(0, len(bulk), self._report_size):
-                    # print(f"bulk {i=} {bulk[i:i+16]=} ")
                     # Always add the 0x00 byte to the beginning of the bulk data, otherwise images won't work
-                    stuff = b"\x00"
-                    self._device.write(self._pad(stuff + bulk[i:i+self._report_size]))
-
+                    stuff = bytes([self._report_id])
+                    padded_data = self._pad(stuff + bulk[i:i+self._report_size])
+                    result = self._device.write(padded_data)
+                    if result != len(padded_data):
+                        print(f"Write error: {result} != {len(padded_data)}")
     # ------------------------------------------------------------------
     # Device lifecycle
     # ------------------------------------------------------------------
@@ -180,12 +186,13 @@ class LibUSBHIDAPI:
             return None
         try:
             size = max(self._input_report_size, 1024) if self._input_report_size else 1024
+            #size = self._input_report_size
             data = self._device.read(size, timeout_ms=timeout_ms)
-            # if len(data) > 0:
-            #     _data = bytes(data).rstrip(b"\x00")
-            #     print(f"read() {_data=}")
+            if len(data) > 0:
+                _data = bytes(data).rstrip(b"\x00")
+
             return bytes(data) if data else None
-        except Exception:
+        except Exception as e:
             return None
 
     def read_(self, size: int) -> Optional[bytes]:
@@ -568,7 +575,7 @@ class LibUSBHIDAPI:
         """
         device_list = []
         for info in hid.enumerate(vendor_id, product_id):
-            if info.get("interface_number") != 0:
+            if info.get("usage_page") != 0xFFA0 or info.get("usage") != 1:
                 continue
             device_list.append({
                 "path": info.get("path", ""),
