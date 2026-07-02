@@ -29,8 +29,23 @@ sudo apt install -y libudev-dev libusb-1.0-0-dev libhidapi-libusb0
 > ⚠️ **重要**：
 >
 > 必须先安装 `libusb-1.0-0-dev`，然后再安装 `libhidapi-libusb0`
->
-> 需要使用 sudo 权限运行
+
+#### 3. 权限问题
+
+有些 `Linux` 系统在没有添加用户设备权限的情况下,需要使用 `sudo` 权限运行,例如:
+
+```
+sudo python3 src/main.py
+```
+
+**添加设备权限列表方法:**
+
+把 99-streamdock.rules 复制到  /etc/udev/rules.d/ 目录.后执行:
+
+```
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+```
 
 ### 🔧 Windows 平台
 
@@ -188,9 +203,54 @@ if __name__ == "__main__":
    # 设置按键图标
    device.set_key_image(key_index, "path/to/icon.jpg")
 
+   # 设置 GIF 动态按键图标。使用 image_keys() 可跳过旋钮或没有按键屏幕的输入。
+   for key_index in device.image_keys():
+       device.set_key_gif(key_index, "path/to/icon.gif")
+   device.start_gif_loop()
+
    # 刷新显示
    device.refresh()
    ```
+
+   N4Pro、M3、XL 的按键图标支持传入 PNG 和 JPEG 文件。透明图片在必须转换为 JPEG 时，会先合成到纯黑背景上。
+
+   N4Pro、XL、M3 还支持通过帧背景流播放 GIF 动态背景：
+
+   ```python
+   # 背景 GIF 作为临时帧背景发送，不写入 ROM。
+   device.set_background_gif("path/to/background.gif")
+   device.start_gif_loop()
+
+   # 可选设置位置和 framebuffer layer。
+   device.set_background_gif("path/to/background.gif", x=0, y=0, fb_layer=0x00)
+
+   # 停止 GIF 播放并清除背景帧层。
+   device.stop_gif_loop()
+   device.clear_background_gif()
+   ```
+
+   背景 GIF 仅支持 N4Pro、XL、M3。其它设备调用 `set_background_gif()` 会返回 `-1`。
+
+   MP4 背景使用同一个临时帧背景流。使用 MP4 播放前需要安装可选视频依赖：
+
+   ```bash
+   pip install opencv-python
+   ```
+
+   ```python
+   # 背景 MP4 会逐帧解码并循环播放。
+   device.set_background_mp4("path/to/background.mp4")
+   device.start_animation_loop()
+
+   # 可选覆盖播放 FPS。
+   device.set_background_mp4("path/to/background.mp4", fps=24)
+
+   # 停止动画播放并清除背景帧层。
+   device.stop_animation_loop()
+   device.clear_background_animation()
+   ```
+
+   背景 MP4 仅支持 N4Pro、XL、M3。其它设备调用 `set_background_mp4()` 会返回 `-1`。MP4 音频会被忽略。
 5. **LED 控制 (例如 N4 Pro)**
 
    ```python
@@ -198,7 +258,36 @@ if __name__ == "__main__":
        device.set_led_brightness(100)  # 设置 LED 亮度 (0-100)
        device.set_led_color(0, 0, 255)  # 设置 LED 颜色 (R, G, B)
    ```
-6. **监听按键事件**
+6. **设备 Config (N4Pro 和 XL)**
+
+   N4Pro 和 XL 提供 `device.config` 对象。设置支持的字段后，调用 `device.send_config()` 使配置生效。
+
+   ```python
+   from StreamDock.Devices.StreamDockN4Pro import StreamDockN4Pro
+   from StreamDock.Devices.StreamDockXL import StreamDockXL
+
+   if isinstance(device, StreamDockN4Pro):
+       device.config.enable_vibration = False
+       device.config.led_follow_key_light = True
+       device.send_config()
+
+   if isinstance(device, StreamDockXL):
+       device.config.led_follow_key_light = True
+       device.send_config()
+   ```
+
+   Config 值可以是 `True`、`False` 或 `None`。`None` 表示使用设备默认值。调用 `device.config.reset()` 可将所有字段重置为 `None`。
+
+   | 设备 | Config 字段 | 说明 |
+   | ---- | ----------- | ---- |
+   | N4Pro | `led_follow_key_light` | RGB LED 状态跟随按键灯状态 |
+   | N4Pro | `key_light_on_disconnect` | 断开连接后保持按键灯行为 |
+   | N4Pro | `check_usb_power` | 启用 USB 供电检测 |
+   | N4Pro | `enable_vibration` | 启用震动反馈 |
+   | N4Pro | `reset_usb_report` | 启用 USB report 重置行为 |
+   | N4Pro | `enable_boot_video` | 启用开机视频 |
+   | XL | `led_follow_key_light` | RGB LED 状态跟随按键灯状态 |
+7. **监听按键事件**
 
    ```python
    def key_callback(device, key, state):
@@ -207,7 +296,20 @@ if __name__ == "__main__":
 
    device.set_key_callback(key_callback)
    ```
-7. **清理资源**
+8. **监听 N4Pro 触摸点**
+
+   ```python
+   from StreamDock.InputTypes import EventType
+   from StreamDock.Devices.StreamDockN4Pro import StreamDockN4Pro
+
+   def touch_callback(device, event):
+       if event.event_type == EventType.TOUCH_POINT:
+           print(f"触摸点: ({event.x}, {event.y})")
+
+   if isinstance(device, StreamDockN4Pro):
+       device.set_touch_bar_callback(touch_callback)
+   ```
+9. **清理资源**
 
    ```python
    device.close()
@@ -234,20 +336,34 @@ if __name__ == "__main__":
 
 ### 3. 热插拔与自动恢复
 
-当设备被拔出并重新插入时，`DeviceManager.listen()` 会自动识别并进行重连。
+当设备被拔出并重新插入时，`DeviceManager.listen()` 会自动识别设备变化：
 
-建议在设备重连后执行初始化：
+- 插入设备：自动加入 `manager.streamdocks`
+- 拔出设备：自动从 `manager.streamdocks` 移除，并调用 `close()` 释放资源
+- 可通过 `on_device_added` / `on_device_removed` 处理业务恢复逻辑
+
+建议把初始化逻辑封装成函数，并在设备重连回调中复用：
 
 ```python
-def autoInit(device):
+def auto_init(device):
     """设备自动初始化函数"""
+    device.open()
+    device.init()
     device.set_key_image(1, "img/default.png")
     device.refresh()
+    device.set_key_callback(key_callback)
     # 其他初始化操作...
 
-# 在重连回调中使用
-newDevice.open()
-autoInit(newDevice)
+t = threading.Thread(
+    target=manager.listen,
+    kwargs={
+        "on_device_added": auto_init,
+        "on_device_removed": lambda device: print(f"设备已移除: {device.path}"),
+        "auto_open": False,
+    },
+)
+t.daemon = True
+t.start()
 ```
 
 ## 许可证

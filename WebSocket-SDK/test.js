@@ -7,22 +7,31 @@
 // - Node.js environment
 // - WebSocket server running on ws://127.0.0.1:9002
 // - ws package: npm install ws
-// - Test images in E:/img/ directory (or update paths below)
+// - Test images in img/ directory (resolved relative to project root)
 //
 // Usage:
 // - Uncomment the test section you want to run
-// - Run with: node "Test Websocket Command.js"
+// - Run with: node docs/test.js
 // =============================================================================
 
 const WebSocket = require('ws');
+const path = require('path');
+const fs = require('fs');
 
 // =============================================================================
 // CONFIGURATION
 // =============================================================================
 
 const WS_URL = 'ws://127.0.0.1:9002';
-const TEST_IMAGE_PATH = "button_test.jpg";
-const TEST_BACKGROUND_PATH = 'background_test.png';
+const LOCAL_IMG_DIR = path.join(__dirname, 'img');
+const PYTHON_SDK_IMG_DIR = path.resolve(__dirname, '..', '..', 'Python-SDK', 'img');
+
+const TEST_IMAGE_PATH = resolveAsset('button_test.jpg');
+const TEST_BACKGROUND_PATH = resolveAsset('backgroud_test.png');
+const TEST_FRAME_BACKGROUND_PATH = resolveAsset('backgroud_test2.png');
+const TEST_PNG_KEY_IMAGE_PATH = resolveAsset('mark.png');
+const TEST_KEY_GIF_PATH = resolveAsset('test.gif');
+const TEST_BACKGROUND_GIF_PATH = resolveAsset('backgroud_test.gif');
 
 // =============================================================================
 // HELPER FUNCTIONS
@@ -33,6 +42,20 @@ const TEST_BACKGROUND_PATH = 'background_test.png';
  */
 function base64Encode(str) {
   return Buffer.from(str).toString('base64');
+}
+
+function resolveAsset(fileName) {
+  const localPath = path.join(LOCAL_IMG_DIR, fileName);
+  if (fs.existsSync(localPath)) {
+    return localPath;
+  }
+
+  const pythonSdkPath = path.join(PYTHON_SDK_IMG_DIR, fileName);
+  if (fs.existsSync(pythonSdkPath)) {
+    return pythonSdkPath;
+  }
+
+  return localPath;
 }
 
 /**
@@ -46,6 +69,37 @@ function sendCommand(ws, event, path, payload = {}) {
   };
   console.log(`Sending: ${event}`);
   ws.send(JSON.stringify(command));
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function keyCountForDevice(deviceType) {
+  const keyCounts = {
+    '293': 15,
+    '293V3': 15,
+    '293s': 6,
+    '293sV3': 6,
+    'N3': 9,
+    'N3EN': 9,
+    'N4': 14,
+    'N4EN': 14,
+    'N1': 15,
+    'N1EN': 15,
+    'N4Pro': 14,
+    'XL': 32,
+    'M18': 18,
+    'M3': 15,
+    'K1Pro': 6,
+    'Mini': 6
+  };
+  return keyCounts[deviceType] || 18;
+}
+
+function imageKeysForDevice(deviceType) {
+  const keyCount = keyCountForDevice(deviceType);
+  return Array.from({ length: keyCount }, (_, index) => index + 1);
 }
 
 /**
@@ -142,7 +196,7 @@ async function createConnectionAndListen() {
 
 
 async function testComprehensive() {
-  console.log('\n=== TEST 9: COMPREHENSIVE TEST (Like Python SDK) ===');
+  console.log('\n=== COMPREHENSIVE TEST (Like Python SDK main.py) ===');
 
   try {
     const { ws, devicePath, deviceInfo } = await createConnectionAndListen();
@@ -154,12 +208,12 @@ async function testComprehensive() {
     console.log(`  Serial: ${deviceInfo.SerialNumber}`);
 
     // Set background image
-    console.log('\n--- Setting background image ---');
-    sendCommand(ws, 'setBackgroundImg', devicePath, {
-      imagePath: TEST_BACKGROUND_PATH
-    });
+    // The image will be written to ROM. Keep this disabled to match Python SDK main.py.
+    // sendCommand(ws, 'setBackgroundImg', devicePath, {
+    //   imagePath: TEST_BACKGROUND_PATH
+    // });
     sendCommand(ws, 'refresh', devicePath, {});
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await sleep(2000);
 
     // Device-specific tests
     const deviceType = deviceInfo.Type;
@@ -167,15 +221,38 @@ async function testComprehensive() {
     // N4Pro special functions
     if (deviceType === 'N4Pro') {
       console.log('\n--- N4Pro special functions ---');
-      sendCommand(ws, 'setLEDBrightness', devicePath, { brightness: 100 });
-      sendCommand(ws, 'setLEDColor', devicePath, { r: 0, g: 0, b: 255 });
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      sendCommand(ws, 'setLEDBrightness', devicePath, { brightness: 255 });
+      // sendCommand(ws, 'setLEDColor', devicePath, { r: 0, g: 0, b: 255 });
+      // N4 Pro supports control single LED colors
+      sendCommand(ws, 'setSingleLedColor', devicePath, {
+        colors: [
+          [255, 0, 0],
+          [0, 0, 255],
+          [255, 0, 255],
+          [255, 255, 0]
+        ]
+      });
+      sendCommand(ws, 'setTemporaryBackgroundImg', devicePath, {
+        imagePath: TEST_FRAME_BACKGROUND_PATH
+      });
+      sendCommand(ws, 'setDeviceConfig', devicePath, {
+        enableVibration: false
+      });
+      // Python SDK keeps N4Pro background GIF commented out. Uncomment if needed:
+      // sendCommand(ws, 'setBackgroundGif', devicePath, { imagePath: TEST_BACKGROUND_GIF_PATH });
+      await sleep(2000);
     }
 
     // XL special functions
     if (deviceType === 'XL') {
       console.log('\n--- XL special functions ---');
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      sendCommand(ws, 'setBackgroundGif', devicePath, {
+        imagePath: TEST_BACKGROUND_GIF_PATH
+      });
+      sendCommand(ws, 'setDeviceConfig', devicePath, {
+        ledFollowKeyLight: true
+      });
+      await sleep(2000);
     }
 
     // K1Pro special functions
@@ -197,7 +274,7 @@ async function testComprehensive() {
       for (let page = 1; page <= 5; page++) {
         console.log(`Changing to page ${page}`);
         sendCommand(ws, 'changeN1Page', devicePath, { page: page });
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await sleep(1000);
       }
 
       // Test calculator mode
@@ -205,7 +282,7 @@ async function testComprehensive() {
       for (let page = 1; page <= 5; page++) {
         console.log(`Changing to page ${page}`);
         sendCommand(ws, 'changeN1Page', devicePath, { page: page });
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await sleep(1000);
       }
 
       // Switch back to dock mode
@@ -216,45 +293,58 @@ async function testComprehensive() {
     // M3 special functions
     if (deviceType === 'M3') {
       console.log('\n--- M3 special functions ---');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      console.log('Performing magnetic calibration...');
-      sendCommand(ws, 'magneticCalibration', devicePath, {});
-    }
-
-    // Set key images for all keys
-    console.log('\n--- Setting key images ---');
-    let maxKeys = 32;
-    switch (deviceType) {
-      case 'N1':
-        maxKeys = 18;
-        break;
-      case 'N4Pro':
-        maxKeys = 14;
-        break;
-      case 'XL':
-        maxKeys = 32;
-        break;
-      case 'K1Pro':
-        maxKeys = 6;
-        break;
-      default:
-        maxKeys = 18;
-        break;
-    }
-    for (let i = 1; i <= maxKeys; i++) {
-      sendCommand(ws, 'setKeyImg', devicePath, {
-        keyIndex: i,
-        imagePath: TEST_IMAGE_PATH
+      sendCommand(ws, 'setBackgroundGif', devicePath, {
+        imagePath: TEST_BACKGROUND_GIF_PATH
       });
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await sleep(2000);
+
+      // sendCommand(ws, 'magneticCalibration', devicePath, {});
+    }
+
+    // Mini special functions
+    if (deviceType === 'Mini') {
+      console.log('\n--- Mini special functions ---');
+      sendCommand(ws, 'setLEDBrightness', devicePath, { brightness: 255 });
+      sendCommand(ws, 'setLEDColor', devicePath, {
+        r: 255,
+        g: 0,
+        b: 0
+      });
+      await sleep(1000);
+    }
+
+    // Set key GIFs/images for all image keys
+    // Matches Python SDK main.py:
+    // i % 3 == 0 -> GIF, i % 3 == 1 -> button_test.jpg, i % 3 == 2 -> mark.png.
+    console.log('\n--- Setting key GIFs/images ---');
+    for (const i of imageKeysForDevice(deviceType)) {
+      if (i % 3 === 0) {
+        sendCommand(ws, 'setKeyGif', devicePath, {
+          keyIndex: i,
+          imagePath: TEST_KEY_GIF_PATH
+        });
+      } else if (i % 3 === 1) {
+        sendCommand(ws, 'setKeyImg', devicePath, {
+          keyIndex: i,
+          imagePath: TEST_IMAGE_PATH
+        });
+      } else {
+        sendCommand(ws, 'setKeyImg', devicePath, {
+          keyIndex: i,
+          imagePath: TEST_PNG_KEY_IMAGE_PATH
+        });
+        sendCommand(ws, 'refresh', devicePath, {});
+      }
+      await sleep(100);
     }
     sendCommand(ws, 'refresh', devicePath, {});
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await sleep(500);
+
+    sendCommand(ws, 'startGifLoop', devicePath, {});
 
     // Start input event listener
     console.log('\n--- Starting input event listener ---');
-    console.log('Press keys, rotate knobs, or swipe to see events...');
+    console.log('Press keys, rotate knobs, swipe, touch N4Pro touch bar, or toggle Mini DIP switches to see events...');
     console.log('Press Ctrl+C to stop\n');
 
     sendCommand(ws, 'read', devicePath, {});
@@ -281,9 +371,25 @@ async function testComprehensive() {
           console.log(`Knob ${payload.knobId} ${payload.state}`);
         }
 
+        // Mini DIP switch events
+        if (payload.type === 'dip_switch') {
+          const direction = payload.direction ? ` ${payload.direction}` : '';
+          console.log(`DIP switch ${payload.dipId}${direction} ${payload.state} (${payload.rawState})`);
+        }
+
         // Swipe events
-        if (payload.direction !== undefined && payload.keyId === undefined) {
+        if (
+          payload.direction !== undefined &&
+          payload.keyId === undefined &&
+          payload.knobId === undefined &&
+          payload.type === undefined
+        ) {
           console.log(`Swipe gesture: ${payload.direction}`);
+        }
+
+        // N4Pro touch point events
+        if (payload.type === 'touch_point') {
+          console.log(`N4Pro touch point: (${payload.x}, ${payload.y})`);
         }
       }
     });

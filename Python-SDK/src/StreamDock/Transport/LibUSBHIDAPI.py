@@ -320,7 +320,7 @@ class LibUSBHIDAPI:
         Set LED brightness.
 
         Args:
-            brightness: Brightness value, typically 0-100
+            brightness: Brightness value, typically 0-255
         """
         self._crt("LBLIG", struct.pack(">B", brightness))
 
@@ -436,7 +436,7 @@ class LibUSBHIDAPI:
 
     def set_n1_skin_bitmap(
         self,
-        jpeg_data: bytes,
+        png_data: bytes,
         skin_mode: int,
         skin_page: int,
         skin_status: int,
@@ -445,8 +445,9 @@ class LibUSBHIDAPI:
     ):
         """
         Set N1 skin bitmap for a specific mode, page, and key.
+        Only PNG format is supported for skin images, and the image data should be in PNG format.
         Args:
-            jpeg_data: JPEG image data for the skin
+            png_data: PNG image data for the skin
             skin_mode: Skin mode identifier, 0 for keyboard, 1 for keyboard lock, 2 for calculator
             skin_page: Skin page identifier, 1-5
             skin_status: Skin status identifier, 0 for press, 1 for release

@@ -15,6 +15,8 @@ class EventType(Enum):
     KNOB_ROTATE = "knob_rotate" # Knob rotation
     KNOB_PRESS = "knob_press"   # Knob press
     SWIPE = "swipe"             # Swipe gesture
+    TOUCH_POINT = "touch_point" # Touchscreen point
+    DIP_SWITCH = "dip_switch"   # DIP switch event
     UNKNOWN = "unknown"
 
 
@@ -67,11 +69,17 @@ class KnobId(Enum):
     KNOB_3 = "knob_3"
     KNOB_4 = "knob_4"
 
+class DIPSwitchId(Enum):
+    """DIP switch ID enum"""
+    DIP_1 = "dip_1"
+    DIP_2 = "dip_2"
+
 
 class Direction(Enum):
     """Direction enum (for knob rotation and swipe gestures)"""
     LEFT = "left"
     RIGHT = "right"
+
 
 
 @dataclass
@@ -85,14 +93,22 @@ class InputEvent:
         event_type: Event type
         key: Button event: which key
         knob_id: Knob event: which knob
+        dip_id: DIP switch event: which switch
         direction: Direction: knob rotation direction or swipe direction
         state: State: 0=release, 1=press
+        x: Touch event X coordinate
+        y: Touch event Y coordinate
+        raw_data: Raw HID packet for touch/raw events
     """
     event_type: EventType
     key: Optional[ButtonKey] = None      # Button event: which key
     knob_id: Optional[KnobId] = None     # Knob event: which knob
+    dip_id: Optional[DIPSwitchId] = None # DIP switch event: which switch
     direction: Optional[Direction] = None # Direction: knob rotation direction or swipe direction
     state: int = 0                       # State: 0=release, 1=press
+    x: Optional[int] = None              # Touch event X coordinate
+    y: Optional[int] = None              # Touch event Y coordinate
+    raw_data: Optional[bytes] = None     # Raw HID packet
 
     def __post_init__(self):
         """Data validation"""
@@ -107,3 +123,9 @@ class InputEvent:
         elif self.event_type == EventType.SWIPE:
             if self.direction is None:
                 raise ValueError("SWIPE event requires direction")
+        elif self.event_type == EventType.DIP_SWITCH:
+            if self.dip_id is None:
+                raise ValueError("DIP_SWITCH event requires dip_id")
+        elif self.event_type == EventType.TOUCH_POINT:
+            if self.x is None or self.y is None:
+                raise ValueError("TOUCH_POINT event requires x and y")

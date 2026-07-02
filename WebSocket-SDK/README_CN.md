@@ -24,7 +24,83 @@
 | StreamDock XL       |
 | StreamDock M18      |
 | StreamDock M3       |
+| StreamDock Mini     |
 | K1Pro               |
+
+## OEM 设备别名
+
+部分 OEM 设备与已支持型号使用相同的 StreamDock 信令协议，但 USB VID/PID 不同。可以在启动服务时使用可重复的 `-oem` 参数注册：
+
+```bash
+WebsocketSDK.exe -oem N4Pro:0x1234:0x5678
+```
+
+可以同时注册多个 OEM 设备：
+
+```bash
+WebsocketSDK.exe -oem N4Pro:0x1234:0x5678 -oem XL:0x2345:0x6789
+```
+
+格式为 `型号:VID:PID`。`VID` 和 `PID` 可以使用十六进制，例如 `0x1234`，也可以使用十进制。OEM 设备必须与所选择的型号使用相同协议。
+
+可用的 `型号` 别名如下，大小写不敏感：
+
+| OEM 别名   | 对应协议型号      |
+| ---------- | ----------------- |
+| `293`    | StreamDock 293    |
+| `293V3`  | StreamDock 293V3  |
+| `293s`   | StreamDock 293s   |
+| `293sV3` | StreamDock 293sV3 |
+| `N3`     | StreamDock N3     |
+| `N4`     | StreamDock N4     |
+| `N1`     | StreamDock N1     |
+| `N4Pro`  | StreamDock N4Pro  |
+| `XL`     | StreamDock XL     |
+| `M18`    | StreamDock M18    |
+| `M3`     | StreamDock M3     |
+| `Mini`   | StreamDock Mini   |
+| `K1Pro`  | K1Pro             |
+
+## Linux 运行依赖
+
+在 Linux 上，预编译的 `StreamDockWebsocketSDK` 可执行文件会动态链接以下系统库：
+
+- `libudev.so.1`
+- `libresolv.so.2`
+- `libpthread.so.0`
+- `libc.so.6`
+- 平台动态加载器，例如 arm64 上的 `ld-linux-aarch64.so.1`
+
+Ubuntu / Debian 可在启动服务前安装 udev 运行库：
+
+```bash
+sudo apt update
+sudo apt install -y libudev1 libhidapi-dev
+```
+
+本仓库的 SDK 采用 Ubuntu 20.04 编译,使用的 glibc 版本是 **2.31**.
+
+如果服务因为 Linux 设备权限无法访问 StreamDock 设备，可以使用 `sudo` 运行
+
+```
+sudo StreamDockWebsocketSDK
+```
+
+或者添加设备权限:
+
+把 99-streamdock.rules 复制到  /etc/udev/rules.d/ 目录.后执行:
+
+```
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+```
+
+对于 OEM 设备，请在重新加载 udev 规则前，为 OEM VID/PID 增加规则。以下示例对应 `0x1234:0x5678`：
+
+```bash
+SUBSYSTEM=="usb", ATTR{idVendor}=="1234", ATTR{idProduct}=="5678", MODE="0666", GROUP="plugdev"
+KERNEL=="hidraw*", ATTRS{idVendor}=="1234", MODE="0666", GROUP="plugdev"
+```
 
 ## 快速开始
 
@@ -133,6 +209,21 @@ const setBackgroundImage = {
 ws.send(JSON.stringify(setBackgroundImage));
 ```
 
+### 设置按键 GIF
+
+```javascript
+const setKeyGif = {
+    event: "setKeyGif",
+    path: devicePath,
+    payload: {
+        keyIndex: 1,
+        imagePath: "E:/images/icon.gif"
+    }
+};
+ws.send(JSON.stringify(setKeyGif));
+ws.send(JSON.stringify({ event: "startGifLoop", path: devicePath, payload: {} }));
+```
+
 ### 设置屏幕亮度
 
 ```javascript
@@ -159,6 +250,23 @@ const setLEDColor = {
     }
 };
 ws.send(JSON.stringify(setLEDColor));
+```
+
+### 分别设置 LED 颜色
+
+```javascript
+const setSingleLedColor = {
+    event: "setSingleLedColor",
+    path: devicePath,
+    payload: {
+        colors: [
+            [255, 0, 0],
+            [0, 255, 0],
+            [0, 0, 255]
+        ]
+    }
+};
+ws.send(JSON.stringify(setSingleLedColor));
 ```
 
 ### 开始监听按键输入
@@ -273,21 +381,39 @@ ws.send(JSON.stringify(refresh));
 
 | 参数名    | 类型   | 说明                    |
 | --------- | ------ | ----------------------- |
-| knobId    | number | 旋钮 ID                |
+| knobId    | number | 旋钮 ID                 |
 | direction | string | 方向："left" 或 "right" |
 
 **旋钮按下事件 Payload：**
 
-| 参数名 | 类型   | 说明            |
-| ------ | ------ | --------------- |
-| knobId | number | 旋钮 ID        |
-| state  | string | 状态："pressed" |
+| 参数名 | 类型   | 说明                          |
+| ------ | ------ | ----------------------------- |
+| knobId | number | 旋钮 ID                       |
+| state  | string | 状态："pressed" 或 "released" |
 
 **滑动手势事件 Payload：**
 
 | 参数名    | 类型   | 说明                    |
 | --------- | ------ | ----------------------- |
 | direction | string | 方向："left" 或 "right" |
+
+**N4Pro 触摸点事件 Payload：**
+
+| 参数名 | 类型   | 说明                    |
+| ------ | ------ | ----------------------- |
+| type   | string | 固定为`"touch_point"` |
+| x      | number | 触摸 X 坐标             |
+| y      | number | 触摸 Y 坐标             |
+
+**Mini 拨码开关事件 Payload：**
+
+| 参数名    | 类型   | 说明                                     |
+| --------- | ------ | ---------------------------------------- |
+| type      | string | 固定为`"dip_switch"`                   |
+| dipId     | number | 拨码开关 ID：`1` 或 `2`              |
+| direction | string | 可选方向：`"left"` 或 `"right"`      |
+| state     | string | 状态：`"pressed"` 或 `"released"`    |
+| rawState  | number | 数值状态：`1` 表示触发，`0` 表示结束 |
 
 ### 客户端发送事件
 
@@ -337,9 +463,9 @@ ws.send(JSON.stringify(refresh));
 
 **Payload 参数：**
 
-| 参数名    | 类型   | 必填 | 说明                                |
-| --------- | ------ | ---- | ----------------------------------- |
-| imagePath | string | 是   | 图像文件的完整路径（支持 jpg、png） |
+| 参数名    | 类型   | 必填 | 说明                                                            |
+| --------- | ------ | ---- | --------------------------------------------------------------- |
+| imagePath | string | 是   | 图像文件完整路径；常见可解码格式会自动转换为设备需要的 JPEG/PNG |
 
 **请求示例：**
 
@@ -359,9 +485,9 @@ ws.send(JSON.stringify(refresh));
 
 **Payload 参数：**
 
-| 参数名  | 类型   | 必填 | 说明                  |
-| ------- | ------ | ---- | --------------------- |
-| imgData | string | 是   | Base64 编码的图像数据 |
+| 参数名  | 类型   | 必填 | 说明                                                        |
+| ------- | ------ | ---- | ----------------------------------------------------------- |
+| imgData | string | 是   | Base64 图像数据或 data URL；会自动转换为设备需要的 JPEG/PNG |
 
 **请求示例：**
 
@@ -375,16 +501,36 @@ ws.send(JSON.stringify(refresh));
 }
 ```
 
+#### setTemporaryBackgroundImg - 从文件设置临时背景
+
+使用 BGPIC 帧流设置临时背景，仅 M18 和 N4Pro 支持。
+
+**Payload 参数：**
+
+| 参数名    | 类型   | 必填 | 说明             |
+| --------- | ------ | ---- | ---------------- |
+| imagePath | string | 是   | 图像文件完整路径 |
+
+#### setTemporaryBackgroundImgData - 从 Base64 设置临时背景
+
+使用 Base64 图像数据设置临时背景，仅 M18 和 N4Pro 支持。
+
+**Payload 参数：**
+
+| 参数名  | 类型   | 必填 | 说明                       |
+| ------- | ------ | ---- | -------------------------- |
+| imgData | string | 是   | Base64 图像数据或 data URL |
+
 #### setKeyImg - 从文件设置按键图标
 
 从本地文件路径加载并设置指定按键的图标。
 
 **Payload 参数：**
 
-| 参数名    | 类型   | 必填 | 说明                                |
-| --------- | ------ | ---- | ----------------------------------- |
-| keyIndex  | number | 是   | 按键索引（从 1 开始）               |
-| imagePath | string | 是   | 图像文件的完整路径（支持 jpg、png） |
+| 参数名    | 类型   | 必填 | 说明                                                            |
+| --------- | ------ | ---- | --------------------------------------------------------------- |
+| keyIndex  | number | 是   | 按键索引（从 1 开始）                                           |
+| imagePath | string | 是   | 图像文件完整路径；常见可解码格式会自动转换为设备需要的 JPEG/PNG |
 
 **请求示例：**
 
@@ -423,15 +569,111 @@ ws.send(JSON.stringify(refresh));
 }
 ```
 
+#### setKeyGif - 从文件设置按键 GIF
+
+加载 GIF 文件并绑定到指定按键。GIF 会在调用 `startGifLoop` 后开始播放。
+
+**参数：**
+
+| 参数      | 类型   | 必需 | 说明                                    |
+| --------- | ------ | ---- | --------------------------------------- |
+| keyIndex  | number | 是   | 按键索引（从 1 开始，根据设备型号不同） |
+| imagePath | string | 是   | GIF 文件完整路径                        |
+
+**请求示例：**
+
+```json
+{
+  "event": "setKeyGif",
+  "path": "XHk6XFxXZW50YnVnZGV2aWNlcw==",
+  "payload": {
+    "keyIndex": 1,
+    "imagePath": "E:/images/icon.gif"
+  }
+}
+```
+
+#### clearKeyGif - 清除按键 GIF
+
+停止并移除指定按键的 GIF。
+
+**参数：**
+
+| 参数     | 类型   | 必需 | 说明                                    |
+| -------- | ------ | ---- | --------------------------------------- |
+| keyIndex | number | 是   | 按键索引（从 1 开始，根据设备型号不同） |
+
+#### setBackgroundGif - 从文件设置背景 GIF
+
+加载 GIF 文件并绑定到触摸屏背景。该功能仅支持 N4Pro、XL 和 M3 设备。GIF 会在调用 `startGifLoop` 后开始播放。
+
+**参数：**
+
+| 参数      | 类型   | 必需 | 说明             |
+| --------- | ------ | ---- | ---------------- |
+| imagePath | string | 是   | GIF 文件完整路径 |
+| x         | number | 否   | X 坐标，默认 0   |
+| y         | number | 否   | Y 坐标，默认 0   |
+| fbLayer   | number | 否   | 帧缓冲层，默认 0 |
+
+**请求示例：**
+
+```json
+{
+  "event": "setBackgroundGif",
+  "path": "XHk6XFxXZW50YnVnZGV2aWNlcw==",
+  "payload": {
+    "imagePath": "E:/images/background.gif",
+    "x": 0,
+    "y": 0,
+    "fbLayer": 0
+  }
+}
+```
+
+#### clearBackgroundGif - 清除背景 GIF
+
+停止并清除背景 GIF 帧流。该功能仅支持 N4Pro、XL 和 M3 设备。
+
+**参数：**
+
+| 参数     | 类型   | 必需 | 说明               |
+| -------- | ------ | ---- | ------------------ |
+| position | number | 否   | 清除位置值，默认 3 |
+
+#### startGifLoop / stopGifLoop / gifLoopStatus - 控制 GIF 播放
+
+启动、停止或查询按键和背景 GIF 共用的播放循环。
+
+**请求示例：**
+
+```json
+{ "event": "startGifLoop", "path": "XHk6XFxXZW50YnVnZGV2aWNlcw==", "payload": {} }
+{ "event": "stopGifLoop", "path": "XHk6XFxXZW50YnVnZGV2aWNlcw==", "payload": {} }
+{ "event": "gifLoopStatus", "path": "XHk6XFxXZW50YnVnZGV2aWNlcw==", "payload": {} }
+```
+
+`gifLoopStatus` 返回：
+
+```json
+{
+  "event": "gifLoopStatus",
+  "path": "XHk6XFxXZW50YnVnZGV2aWNlcw==",
+  "payload": {
+    "running": true
+  }
+}
+```
+
 #### setKeyImgBulk - 批量设置按键图标
 
 使用单个图像文件批量设置多个按键的图标。这比多次调用 `setKeyImg` 更高效。
 
 **Payload 参数：**
 
-| 参数名     | 类型     | 必填 | 说明                                                  |
-| ---------- | -------- | ---- | ----------------------------------------------------- |
-| imagePath  | string   | 是   | 图像文件的完整路径（支持 jpg、png）                   |
+| 参数名     | 类型     | 必填 | 说明                                                |
+| ---------- | -------- | ---- | --------------------------------------------------- |
+| imagePath  | string   | 是   | 图像文件的完整路径（支持 jpg、png）                 |
 | keyIndexes | number[] | 是   | 要更新的按键索引数组（从 1 开始，根据设备型号不同） |
 
 **请求示例：**
@@ -449,7 +691,7 @@ ws.send(JSON.stringify(refresh));
 
 #### read - 开始监听设备输入
 
-开始监听设备的按键、旋钮等输入事件。
+开始监听设备的按键、旋钮、触摸等输入事件。
 
 **Payload 参数：** 无（空对象 `{}`）
 
@@ -517,7 +759,7 @@ ws.send(JSON.stringify(refresh));
 }
 ```
 
-#### setLEDBrightness - 设置 LED 亮度
+#### ==setLED==Brightness - 设置 LED 亮度
 
 设置设备 LED 灯的亮度。
 
@@ -525,7 +767,7 @@ ws.send(JSON.stringify(refresh));
 
 | 参数名     | 类型   | 必填 | 说明                   |
 | ---------- | ------ | ---- | ---------------------- |
-| brightness | number | 是   | LED 亮度值，范围 0-100 |
+| brightness | number | 是   | LED 亮度值，范围 0-255 |
 
 **请求示例：**
 
@@ -539,7 +781,7 @@ ws.send(JSON.stringify(refresh));
 }
 ```
 
-#### setLEDColor - 设置 LED 颜色
+#### ==setLED==Color - 设置全部的 LED 颜色
 
 设置设备 LED 灯的 RGB 颜色。
 
@@ -565,7 +807,33 @@ ws.send(JSON.stringify(refresh));
 }
 ```
 
-#### resetLEDColor - 重置 LED 颜色
+#### setSingleLedColor - 分别设置 LED 颜色
+
+按设备 LED 顺序分别设置 RGB 颜色。
+
+**Payload 参数：**
+
+| 参数名 | 类型       | 必填 | 说明                                             |
+| ------ | ---------- | ---- | ------------------------------------------------ |
+| colors | number[][] | 是   | 按 LED 顺序排列的 RGB 三元组；每个分量范围 0-255 |
+
+**请求示例：**
+
+```json
+{
+  "event": "setSingleLedColor",
+  "path": "XHk6XFxXZW50YnVnZGV2aWNlcw==",
+  "payload": {
+    "colors": [
+      [255, 0, 0],
+      [0, 255, 0],
+      [0, 0, 255]
+    ]
+  }
+}
+```
+
+#### re==setLED==Color - 重置 LED 颜色
 
 重置设备 LED 灯为默认颜色。
 
@@ -581,6 +849,44 @@ ws.send(JSON.stringify(refresh));
 }
 ```
 
+#### setDeviceConfig - 设置设备配置
+
+通过设备 QUCMD 协议设置 N4Pro 或 XL 的设备配置。
+
+**支持设备：**
+
+| 设备  | Payload 字段                                                                                                                     |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------- |
+| N4Pro | `ledFollowKeyLight`, `keyLightOnDisconnect`, `checkUsbPower`, `enableVibration`, `resetUsbReport`, `enableBootVideo` |
+| XL    | `ledFollowKeyLight`                                                                                                            |
+
+**Payload 值：**
+
+使用 `true` 表示开启，`false` 表示关闭；省略字段时使用协议默认值。
+
+**请求示例：**
+
+```json
+{
+  "event": "setDeviceConfig",
+  "path": "XHk6XFxXZW50YnVnZGV2aWNlcw==",
+  "payload": {
+    "enableVibration": false,
+    "enableBootVideo": false
+  }
+}
+```
+
+```json
+{
+  "event": "setDeviceConfig",
+  "path": "XHk6XFxXZW50YnVnZGV2aWNlcw==",
+  "payload": {
+    "ledFollowKeyLight": true
+  }
+}
+```
+
 ### N1 设备专用事件
 
 以下事件仅适用于 N1 设备：
@@ -591,8 +897,8 @@ ws.send(JSON.stringify(refresh));
 
 **Payload 参数：**
 
-| 参数名 | 类型   | 必填 | 说明                                          |
-| ------ | ------ | ---- | --------------------------------------------- |
+| 参数名 | 类型   | 必填 | 说明                                         |
+| ------ | ------ | ---- | -------------------------------------------- |
 | mode   | string | 是   | 设备模式："keyboard"、"calculator" 或 "dock" |
 
 **请求示例：**
@@ -613,9 +919,9 @@ ws.send(JSON.stringify(refresh));
 
 **Payload 参数：**
 
-| 参数名 | 类型   | 必填 | 说明               |
-| ------ | ------ | ---- | ------------------ |
-| page   | number | 是   | 页码（1-5）        |
+| 参数名 | 类型   | 必填 | 说明        |
+| ------ | ------ | ---- | ----------- |
+| page   | number | 是   | 页码（1-5） |
 
 **请求示例：**
 
@@ -635,13 +941,13 @@ ws.send(JSON.stringify(refresh));
 
 **Payload 参数：**
 
-| 参数名     | 类型   | 必填 | 说明                                                    |
-| ---------- | ------ | ---- | ------------------------------------------------------- |
-| skinMode   | string | 是   | 皮肤模式："keyboard"、"keyboard_lock" 或 "calculator"    |
-| skinPage   | number | 是   | 皮肤页码                                                |
-| skinStatus | string | 是   | 皮肤状态："press" 或 "release"                          |
-| keyIndex   | number | 是   | 按键索引（从 1 开始）                                   |
-| imageData  | string | 是   | Base64 编码的图像数据                                   |
+| 参数名     | 类型   | 必填 | 说明                                                  |
+| ---------- | ------ | ---- | ----------------------------------------------------- |
+| skinMode   | string | 是   | 皮肤模式："keyboard"、"keyboard_lock" 或 "calculator" |
+| skinPage   | number | 是   | 皮肤页码                                              |
+| skinStatus | string | 是   | 皮肤状态："press" 或 "release"                        |
+| keyIndex   | number | 是   | 按键索引（从 1 开始）                                 |
+| imageData  | string | 是   | Base64 编码的图像数据                                 |
 
 **请求示例：**
 
@@ -665,13 +971,13 @@ ws.send(JSON.stringify(refresh));
 
 **Payload 参数：**
 
-| 参数名     | 类型   | 必填 | 说明                                                    |
-| ---------- | ------ | ---- | ------------------------------------------------------- |
-| skinMode   | string | 是   | 皮肤模式："keyboard"、"keyboard_lock" 或 "calculator"    |
-| skinPage   | number | 是   | 皮肤页码                                                |
-| skinStatus | string | 是   | 皮肤状态："press" 或 "release"                          |
-| keyIndex   | number | 是   | 按键索引（从 1 开始）                                   |
-| imagePath  | string | 是   | 图像文件的完整路径（支持 jpg、png）                     |
+| 参数名     | 类型   | 必填 | 说明                                                  |
+| ---------- | ------ | ---- | ----------------------------------------------------- |
+| skinMode   | string | 是   | 皮肤模式："keyboard"、"keyboard_lock" 或 "calculator" |
+| skinPage   | number | 是   | 皮肤页码                                              |
+| skinStatus | string | 是   | 皮肤状态："press" 或 "release"                        |
+| keyIndex   | number | 是   | 按键索引（从 1 开始）                                 |
+| imagePath  | string | 是   | 图像文件的完整路径（支持 jpg、png）                   |
 
 **请求示例：**
 
@@ -692,6 +998,8 @@ ws.send(JSON.stringify(refresh));
 ### M3 设备专用事件
 
 以下事件仅适用于 M3 设备：
+
+M3 旋钮按压输入也会通过 `read` 事件的旋钮按下 Payload 上报 `"pressed"` 和 `"released"` 状态。
 
 #### magneticCalibration - M3 磁力校准
 
@@ -831,6 +1139,6 @@ ws.send(JSON.stringify(refresh));
 
 - **路径分隔符**：在 Windows 中应使用双反斜杠 `\\` 或正斜杠 `/`
 - **设备路径**：所有操作都需要包含设备路径（Base64 编码），从连接事件中获取
-- **图片格式**：支持 JPEG、PNG 格式，图片会自动缩放到目标尺寸
+- **图片格式**：支持 JPEG、PNG 和 GIF 文件，静态图片和 GIF 帧会自动缩放到目标尺寸
 - **事件顺序**：建议先等待设备连接事件，再进行设备操作
 - **错误处理**：建议增加完善的错误处理逻辑以保证稳定性

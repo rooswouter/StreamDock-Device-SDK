@@ -1,5 +1,11 @@
 #pragma once
+#include <array>
+#include <chrono>
+#include <iostream>
 #include <memory>
+#include <string>
+#include <thread>
+#include <utility>
 #include <streamdock.h>
 #include <OpenCVImageEncoder.h>
 #include <toolkit.h>
@@ -8,6 +14,7 @@
 #include <HotspotDevice/StreamDockXL/streamdockXL.h>
 #include <HotspotDevice/StreamDockM3/streamdockM3.h>
 #include <HotspotDevice/StreamDockM18V3/streamdockM18V3.h>
+#include <HotspotDevice/StreamDockMini/streamdockMini.h>
 #include <HotspotDevice/K1Pro/K1Pro.h>
 
 template <typename T, typename... Args>
@@ -27,16 +34,16 @@ namespace TEST_293V2
 		device->wakeupScreen();
 		device->clearAllKeys();
 		device->setEncoder(std::make_shared<OpenCVImageEncoder>());
-		// device->setBackgroundImgFile("../../img/YiFei.jpg", 5000);
+		// device->setBackgroundImgFile("../../img/backgroud_test.png", 5000);
 		// device->refresh();
 		// std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-		device->setKeyImgFile("../../img/YiFei.jpg", 9);
+		device->setKeyImgFile("../../img/button_test.jpg", 9);
 		device->refresh();
-		device->setKeyImgFile("../../img/YiFei.jpg", 8);
+		device->setKeyImgFile("../../img/button_test.jpg", 8);
 		device->refresh();
-		device->setKeyImgFile("../../img/YiFei.jpg", 7);
+		device->setKeyImgFile("../../img/button_test.jpg", 7);
 		device->refresh();
-		device->setKeyImgFile("../../img/YiFei.jpg", 6);
+		device->setKeyImgFile("../../img/button_test.jpg", 6);
 		device->refresh();
 		device->reader()->startReadLoop();
 		device->reader()->registerReadCallback(1, []()
@@ -61,21 +68,21 @@ namespace TEST_293V3
 		device->wakeupScreen();
 		device->clearAllKeys();
 		device->setEncoder(std::make_shared<OpenCVImageEncoder>());
-		device->setBackgroundImgFile("../../img/YiFei.jpg");
+		device->setBackgroundImgFile("../../img/backgroud_test.png");
 		device->refresh();
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 		device->gifer()->setKeyGifFile("../../img/test.gif", 1);
 		device->gifer()->setKeyGifFile("../../img/test.gif", 2);
-		device->gifer()->setKeyGifFile("../../img/2.gif", 2);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 2);
 		device->gifer()->setKeyGifFile("../../img/test.gif", 3);
 		device->gifer()->setKeyGifFile("../../img/test.gif", 4);
-		device->gifer()->setKeyGifFile("../../img/2.gif", 10);
-		device->gifer()->setKeyGifFile("../../img/3.gif", 11);
-		device->gifer()->setKeyGifFile("../../img/4.gif", 15);
-		device->gifer()->setKeyGifFile("../../img/5.gif", 7);
-		device->gifer()->setKeyGifFile("../../img/6.gif", 3);
-		device->gifer()->setKeyGifFile("../../img/7.gif", 13);
-		device->setKeyImgFile("../../img/YiFei.jpg", 9);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 10);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 11);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 15);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 7);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 3);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 13);
+		device->setKeyImgFile("../../img/button_test.jpg", 9);
 		device->rgber()->setLedBrightness(13);
 		device->gifer()->startGifLoop();
 		device->reader()->startReadLoop();
@@ -89,7 +96,7 @@ namespace TEST_293V3
 											   { debugPrint("Key 10"); }, RegisterEvent::EveryThing, true);
 		device->reader()->registerReadCallback(15, []()
 											   { debugPrint("Key 15"); }, RegisterEvent::EveryThing, true);
-		device->setBackgroundImgFile("../../img/bg.png");
+		device->setBackgroundImgFile("../../img/backgroud_test.png");
 		device->refresh();
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
@@ -104,16 +111,16 @@ namespace TEST_293sV2
 		device->wakeupScreen();
 		device->clearAllKeys();
 		device->setEncoder(std::make_shared<OpenCVImageEncoder>());
-		// device->setBackgroundImgFile("../../img/YiFei.jpg", 5000);
+		// device->setBackgroundImgFile("../../img/backgroud_test.png", 5000);
 		// device->refresh();
 		// std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-		device->setKeyImgFile("../../img/YiFei.jpg", 1);
+		device->setKeyImgFile("../../img/button_test.jpg", 1);
 		device->refresh();
-		device->setKeyImgFile("../../img/YiFei.jpg", 6);
+		device->setKeyImgFile("../../img/button_test.jpg", 6);
 		device->refresh();
-		device->setKeyImgFile("../../img/YiFei.jpg", 16);
+		device->setKeyImgFile("../../img/button_test.jpg", 16);
 		device->refresh();
-		device->setKeyImgFile("../../img/YiFei.jpg", 19);
+		device->setKeyImgFile("../../img/button_test.jpg", 19);
 		device->refresh();
 		device->reader()->startReadLoop();
 		device->reader()->registerReadCallback(1, []()
@@ -138,22 +145,22 @@ namespace TEST_293sV3
 		device->wakeupScreen();
 		device->clearAllKeys();
 		device->setEncoder(std::make_shared<OpenCVImageEncoder>());
-		device->setBackgroundImgFile("../../img/YiFei.jpg");
+		// device->setBackgroundImgFile("../../img/backgroud_test.png");
 		device->refresh();
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-		device->gifer()->setKeyGifFile("../../img/test.gif", 1);
-		device->gifer()->setKeyGifFile("../../img/test.gif", 2);
-		device->gifer()->setKeyGifFile("../../img/2.gif", 2);
-		device->gifer()->setKeyGifFile("../../img/test.gif", 3);
-		device->gifer()->setKeyGifFile("../../img/test.gif", 4);
-		device->gifer()->setKeyGifFile("../../img/2.gif", 10);
-		device->gifer()->setKeyGifFile("../../img/3.gif", 11);
-		device->gifer()->setKeyGifFile("../../img/4.gif", 15);
-		device->gifer()->setKeyGifFile("../../img/5.gif", 7);
-		device->gifer()->setKeyGifFile("../../img/6.gif", 3);
-		device->gifer()->setKeyGifFile("../../img/7.gif", 13);
-		device->setKeyImgFile("../../img/YiFei.jpg", 13);
-		device->gifer()->setKeyGifFile("../../img/6.gif", 17);
+		// device->gifer()->setKeyGifFile("../../img/test.gif", 1);
+		// device->gifer()->setKeyGifFile("../../img/test.gif", 2);
+		// device->gifer()->setKeyGifFile("../../img/test.gif", 2);
+		// device->gifer()->setKeyGifFile("../../img/test.gif", 3);
+		// device->gifer()->setKeyGifFile("../../img/test.gif", 4);
+		// device->gifer()->setKeyGifFile("../../img/test.gif", 10);
+		// device->gifer()->setKeyGifFile("../../img/test.gif", 11);
+		// device->gifer()->setKeyGifFile("../../img/test.gif", 15);
+		// device->gifer()->setKeyGifFile("../../img/test.gif", 7);
+		// device->gifer()->setKeyGifFile("../../img/test.gif", 3);
+		// device->gifer()->setKeyGifFile("../../img/test.gif", 13);
+		// device->setKeyImgFile("../../img/button_test.jpg", 13);
+		// device->gifer()->setKeyGifFile("../../img/test.gif", 17);
 		device->rgber()->setLedBrightness(13);
 		device->gifer()->startGifLoop();
 		device->reader()->startReadLoop();
@@ -167,7 +174,7 @@ namespace TEST_293sV3
 											   { debugPrint("Key 10"); }, RegisterEvent::EveryThing, true);
 		device->reader()->registerReadCallback(15, []()
 											   { debugPrint("Key 15"); }, RegisterEvent::EveryThing, true);
-		device->setBackgroundImgFile("../../img/bg.png");
+		device->setKeyImgFile("../../img/mark.png", 9);
 		device->refresh();
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
@@ -182,21 +189,21 @@ namespace TEST_M18
 		device->wakeupScreen();
 		device->clearAllKeys();
 		device->setEncoder(std::make_shared<OpenCVImageEncoder>());
-		device->setBackgroundImgFile("../../img/YiFei.jpg");
+		device->setBackgroundImgFile("../../img/backgroud_test.png");
 		device->refresh();
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 		device->gifer()->setKeyGifFile("../../img/test.gif", 1);
 		device->gifer()->setKeyGifFile("../../img/test.gif", 2);
-		device->gifer()->setKeyGifFile("../../img/2.gif", 2);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 2);
 		device->gifer()->setKeyGifFile("../../img/test.gif", 3);
 		device->gifer()->setKeyGifFile("../../img/test.gif", 4);
-		device->gifer()->setKeyGifFile("../../img/2.gif", 10);
-		device->gifer()->setKeyGifFile("../../img/3.gif", 11);
-		device->gifer()->setKeyGifFile("../../img/4.gif", 15);
-		device->gifer()->setKeyGifFile("../../img/5.gif", 7);
-		device->gifer()->setKeyGifFile("../../img/6.gif", 3);
-		device->gifer()->setKeyGifFile("../../img/7.gif", 13);
-		device->setKeyImgFile("../../img/YiFei.jpg", 9);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 10);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 11);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 15);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 7);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 3);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 13);
+		device->setKeyImgFile("../../img/button_test.jpg", 9);
 		device->rgber()->setLedColor(255, 0, 0);
 		device->rgber()->setLedBrightness(13);
 		device->gifer()->startGifLoop();
@@ -215,7 +222,7 @@ namespace TEST_M18
 											   { debugPrint("left button"); }, RegisterEvent::EveryThing, true);
 		device->reader()->registerReadCallback(17, []()
 											   { debugPrint("middle button"); }, RegisterEvent::EveryThing, true);
-		device->setBackgroundImgFile("../../img/bg.png");
+		device->setBackgroundImgFile("../../img/backgroud_test.png");
 		device->refresh();
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
@@ -230,10 +237,10 @@ namespace TEST_N3V2
 		device->wakeupScreen();
 		device->clearAllKeys();
 		device->setEncoder(std::make_shared<OpenCVImageEncoder>());
-		// device->setBackgroundImgFile("../../img/bg.png", 5000);
+		// device->setBackgroundImgFile("../../img/backgroud_test.png", 5000);
 		// device->refresh();
 		// std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-		device->setKeyImgFile("../../img/YiFei.jpg", 1);
+		device->setKeyImgFile("../../img/button_test.jpg", 1);
 		device->refresh();
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 		device->reader()->startReadLoop();
@@ -267,21 +274,21 @@ namespace TEST_N3V25
 		device->wakeupScreen();
 		device->clearAllKeys();
 		device->setEncoder(std::make_shared<OpenCVImageEncoder>());
-		device->setBackgroundImgFile("../../img/bg.png");
+		device->setBackgroundImgFile("../../img/backgroud_test.png");
 		device->refresh();
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 		device->gifer()->setKeyGifFile("../../img/test.gif", 1);
 		device->gifer()->setKeyGifFile("../../img/test.gif", 2);
-		device->gifer()->setKeyGifFile("../../img/2.gif", 2);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 2);
 		device->gifer()->setKeyGifFile("../../img/test.gif", 3);
 		device->gifer()->setKeyGifFile("../../img/test.gif", 4);
-		device->gifer()->setKeyGifFile("../../img/2.gif", 10);
-		device->gifer()->setKeyGifFile("../../img/3.gif", 11);
-		device->gifer()->setKeyGifFile("../../img/4.gif", 15);
-		device->gifer()->setKeyGifFile("../../img/5.gif", 7);
-		device->gifer()->setKeyGifFile("../../img/6.gif", 3);
-		device->gifer()->setKeyGifFile("../../img/7.gif", 13);
-		device->setKeyImgFile("../../img/YiFei.jpg", 9);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 10);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 11);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 15);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 7);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 3);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 13);
+		device->setKeyImgFile("../../img/button_test.jpg", 9);
 		device->rgber()->setLedBrightness(13);
 		device->gifer()->startGifLoop();
 		device->reader()->startReadLoop();
@@ -384,21 +391,21 @@ namespace TEST_N4
 		device->wakeupScreen();
 		device->clearAllKeys();
 		device->setEncoder(std::make_shared<OpenCVImageEncoder>());
-		device->setBackgroundImgFile("../../img/YiFei.jpg");
+		device->setBackgroundImgFile("../../img/backgroud_test.png");
 		device->refresh();
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 		device->gifer()->setKeyGifFile("../../img/test.gif", 1);
 		device->gifer()->setKeyGifFile("../../img/test.gif", 2);
-		device->gifer()->setKeyGifFile("../../img/2.gif", 2);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 2);
 		device->gifer()->setKeyGifFile("../../img/test.gif", 3);
 		device->gifer()->setKeyGifFile("../../img/test.gif", 4);
-		device->gifer()->setKeyGifFile("../../img/2.gif", 10);
-		device->gifer()->setKeyGifFile("../../img/3.gif", 11);
-		device->gifer()->setKeyGifFile("../../img/4.gif", 15);
-		device->gifer()->setKeyGifFile("../../img/5.gif", 7);
-		device->gifer()->setKeyGifFile("../../img/6.gif", 3);
-		device->gifer()->setKeyGifFile("../../img/7.gif", 13);
-		device->setKeyImgFile("../../img/YiFei.jpg", 9);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 10);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 11);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 15);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 7);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 3);
+		device->gifer()->setKeyGifFile("../../img/test.gif", 13);
+		device->setKeyImgFile("../../img/button_test.jpg", 9);
 		device->rgber()->setLedBrightness(13);
 		device->gifer()->startGifLoop();
 		device->reader()->registerReadCallback(1, []()
@@ -416,7 +423,7 @@ namespace TEST_N4
 		device->reader()->registerReadCallback(17, []()
 											   { debugPrint("knob 1 right"); }, RegisterEvent::KnobRight, true);
 
-		device->setBackgroundImgFile("../../img/bg.png");
+		device->setBackgroundImgFile("../../img/backgroud_test.png");
 		device->refresh();
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
@@ -435,14 +442,22 @@ namespace TEST_N4Pro
 															{N4ProConfigEnumerate::EnableBootVideo, ConfigState::Off}});
 		device->configer()->setDeviceConfig(configs);
 		device->setKeyBrightness(100);
-		device->rgber()->setLedColor(0, 255, 0);
-		device->rgber()->setLedBrightness(10);
+		// setLedColor uses the device configured LED count automatically.
+		// device->rgber()->setLedColor(255, 0, 0);
+		device->rgber()->setLedBrightness(255);
+		// N4Pro Supports setting single LED color
+		device->rgber()->setSingleLedColor({
+			{255, 0, 0},
+			{0, 0, 255},
+			{255, 0, 255},
+			{255, 255, 0},
+		});
 		// device->rgber()->resetLedColor();
 		device->reader()->startReadLoop();
 		device->wakeupScreen();
 		device->clearAllKeys();
 		device->setEncoder(std::make_shared<OpenCVImageEncoder>());
-		device->setBackgroundImgFile("../../img/backgroud_test.png");
+		// device->setBackgroundImgFile("../../img/backgroud_test.png");
 		device->refresh();
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 		device->clearAllKeys();
@@ -455,7 +470,7 @@ namespace TEST_N4Pro
 		// device->gifer()->setKeyGifFile("../../img/test.gif", 11);
 		// device->gifer()->setKeyGifFile("../../img/test.gif", 15);
 		device->gifer()->startGifLoop();
-		// device->gifer()->setKeyGifFile("../../img/test.gif", 13, 30);
+		// device->gifer()->setKeyGifFile("../../img/test.gif", 13);
 		{
 			/// crop by point(x, y) and size(width, height)
 			// device->getBackgroundGifHelper()->_crop_offset_x = 100;
@@ -470,9 +485,9 @@ namespace TEST_N4Pro
 			/// all screen
 			// device->gifer()->setBackgroundGifFile("../../img/test.gif");
 		}
-
+		device->setFrameBackgroundFile("../../img/backgroud_test2.png");
 		device->setKeyImgFile("../../img/button_test.jpg", 9);
-		device->refresh();
+		device->setKeyImgFile("../../img/mark.png", 10);
 		device->reader()->registerReadCallback(1, []()
 											   { debugPrint("secondary screen 1 release"); }, RegisterEvent::EveryThing);
 		device->reader()->registerReadCallback(11, []()
@@ -501,15 +516,13 @@ namespace TEST_XL
 		if (device->info()->originType != DeviceOriginType::SDXL || !device->feature()->supportBackGroundGif)
 			return;
 		device->heartbeater()->startHeartBeatLoop();
-		auto configs = buildConfigCommand(N4ProConfigEnumerate::EnableVibration, ConfigState::Off);
-		device->configer()->setDeviceConfig(configs);
-		configs = buildConfigCommand<XLConfigEnumerate>({
+		auto configs = buildConfigCommand<XLConfigEnumerate>({
 			{XLConfigEnumerate::LedFollowKeyLight, ConfigState::On},
 		});
 		device->configer()->setDeviceConfig(configs);
 		device->setKeyBrightness(100);
 		device->rgber()->setLedColor(0, 255, 0);
-		device->rgber()->setLedBrightness(10);
+		device->rgber()->setLedBrightness(255);
 		// device->rgber()->resetLedColor();
 		device->reader()->startReadLoop();
 		device->wakeupScreen();
@@ -519,20 +532,20 @@ namespace TEST_XL
 		device->refresh();
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 		device->clearAllKeys();
-		// device->setKeyImgFile("../../img/test_img.jpg", 2);
+		// device->setKeyImgFile("../../img/button_test.jpg", 2);
 		// device->gifer()->setKeyGifFile("../../img/test.gif", 1);
 		// device->gifer()->setKeyGifFile("../../img/test.gif", 2);
-		//  device->gifer()->setKeyGifFile("../../img/2.gif", 2);
+		//  device->gifer()->setKeyGifFile("../../img/test.gif", 2);
 		//  device->gifer()->setKeyGifFile("../../img/test.gif", 3);
 		//  device->gifer()->setKeyGifFile("../../img/test.gif", 4);
-		//  device->gifer()->setKeyGifFile("../../img/2.gif", 10);
-		//  device->gifer()->setKeyGifFile("../../img/3.gif", 11);
+		//  device->gifer()->setKeyGifFile("../../img/test.gif", 10);
+		//  device->gifer()->setKeyGifFile("../../img/test.gif", 11);
 		for (int i = 1; i <= 32; i++)
 			device->gifer()->setKeyGifFile("../../img/test.gif", i);
 		// device->gifer()->setKeyGifFile("../../img/test.gif", 15);
-		// device->gifer()->setKeyGifFile("../../img/5.gif", 6);
-		// device->gifer()->setKeyGifFile("../../img/6.gif", 3);
-		// device->gifer()->setKeyGifFile("../../img/7.gif", 13, 30);
+		// device->gifer()->setKeyGifFile("../../img/test.gif", 6);
+		// device->gifer()->setKeyGifFile("../../img/test.gif", 3);
+		// device->gifer()->setKeyGifFile("../../img/test.gif", 13);
 		{
 			/// crop by point(x, y) and size(width, height)
 			// device->getBackgroundGifHelper()->_crop_offset_x = 100;
@@ -548,7 +561,7 @@ namespace TEST_XL
 			// device->gifer()->setBackgroundGifFile("../../img/test.gif");
 		}
 
-		// device->setKeyImgFile("../../img/YiFei.jpg", 9);
+		// device->setKeyImgFile("../../img/button_test.jpg", 9);
 		device->gifer()->startGifLoop();
 		for (int i = 1; i <= 32; i++)
 		{
@@ -715,5 +728,67 @@ namespace TEST_K1Pro
 		K1ProDevice->setKeyboardLightingEffects(1);
 		K1ProDevice->setKeyboardBacklightBrightness(6);
 		K1ProDevice->setKeyboardRgbBacklight(255, 0, 0);
+	}
+}
+namespace TEST_Mini
+{
+	void test(std::shared_ptr<StreamDock> device)
+	{
+		if (device->info()->originType != DeviceOriginType::SDMini)
+			return;
+		device->heartbeater()->startHeartBeatLoop();
+		device->wakeupScreen();
+		device->setKeyBrightness(100);
+		device->reader()->startReadLoop();
+		device->clearAllKeys();
+		device->setEncoder(std::make_shared<OpenCVImageEncoder>());
+		// device->setBackgroundImgFile("../../img/backgroud_test2.png");
+		// std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		for (int i = 1; i <= 6; i++)
+		{
+			if (0 == i % 3)
+				device->gifer()->setKeyGifFile("../../img/test.gif", i);
+			else if (1 == i % 3)
+				device->setKeyImgFile("../../img/button_test.jpg", i);
+			else if (2 == i % 3)
+				device->setKeyImgFile("../../img/mark.png", i);
+		}
+		device->gifer()->startGifLoop();
+		device->refresh();
+		device->rgber()->setLedColor(0, 0, 255);
+
+		for (int i = 1; i <= 6; i++)
+		{
+			int keyIndex = i;
+			device->reader()->registerReadCallback(keyIndex, [keyIndex]()
+												   { debugPrint("Key " + std::to_string(keyIndex) + " pressed"); }, RegisterEvent::KeyPress);
+			device->reader()->registerReadCallback(keyIndex, [keyIndex]()
+												   { debugPrint("Key " + std::to_string(keyIndex) + " release"); }, RegisterEvent::KeyRelease);
+		}
+
+		device->reader()->registerReadCallback(7, []()
+											   { debugPrint("dip 1 left"); }, RegisterEvent::DIPLeft);
+		device->reader()->registerReadCallback(7, []()
+											   { debugPrint("dip 1 left end"); }, RegisterEvent::DIPLeftEnd);
+		device->reader()->registerReadCallback(8, []()
+											   { debugPrint("dip 1 right"); }, RegisterEvent::DIPRight);
+		device->reader()->registerReadCallback(8, []()
+											   { debugPrint("dip 1 right end"); }, RegisterEvent::DIPRightEnd);
+		device->reader()->registerReadCallback(9, []()
+											   { debugPrint("dip 1 pressed"); }, RegisterEvent::DIPPress);
+		device->reader()->registerReadCallback(9, []()
+											   { debugPrint("dip 1 release"); }, RegisterEvent::DIPRelease);
+		device->reader()->registerReadCallback(10, []()
+											   { debugPrint("dip 2 left"); }, RegisterEvent::DIPLeft);
+		device->reader()->registerReadCallback(10, []()
+											   { debugPrint("dip 2 left end"); }, RegisterEvent::DIPLeftEnd);
+		device->reader()->registerReadCallback(11, []()
+											   { debugPrint("dip 2 right"); }, RegisterEvent::DIPRight);
+		device->reader()->registerReadCallback(11, []()
+											   { debugPrint("dip 2 right end"); }, RegisterEvent::DIPRightEnd);
+		device->reader()->registerReadCallback(12, []()
+											   { debugPrint("dip 2 pressed"); }, RegisterEvent::DIPPress);
+		device->reader()->registerReadCallback(12, []()
+											   { debugPrint("dip 2 release"); }, RegisterEvent::DIPRelease);
 	}
 }

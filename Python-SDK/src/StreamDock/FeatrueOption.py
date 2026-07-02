@@ -14,11 +14,14 @@ class device_type(Enum):
     dock_n4pro=10
     dock_xl=11
     k1pro=12
+    dock_mini=13
     
 class FeatrueOption:
     def __init__(self):
         self.hasRGBLed = False
         self.ledCounts = 0
         self.supportConfig = False
-        self.supportBackgroundImage = True
+        self.supportKeyGif = True
+        self.supportBackgroundGif = False
         self.deviceType = device_type.dock_universal
+        self.support_single_led_color = False

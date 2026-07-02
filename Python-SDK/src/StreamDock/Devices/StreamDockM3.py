@@ -68,7 +68,7 @@ class StreamDockM3(StreamDock):
             return InputEvent(
                 event_type=EventType.BUTTON,
                 key=self._HW_TO_LOGICAL_KEY[hardware_code],
-                state=normalized_state
+                state=normalized_state,
             )
         # Knob rotation event
         knob_rotate_map = {
@@ -76,8 +76,8 @@ class StreamDockM3(StreamDock):
             0x51: (KnobId.KNOB_1, Direction.RIGHT),
             0x90: (KnobId.KNOB_2, Direction.LEFT),
             0x91: (KnobId.KNOB_2, Direction.RIGHT),
-            0xa0: (KnobId.KNOB_3, Direction.LEFT),
-            0xa1: (KnobId.KNOB_3, Direction.RIGHT),
+            0xA0: (KnobId.KNOB_3, Direction.LEFT),
+            0xA1: (KnobId.KNOB_3, Direction.RIGHT),
         }
         if hardware_code in knob_rotate_map:
             knob_id, direction = knob_rotate_map[hardware_code]
@@ -132,7 +132,7 @@ class StreamDockM3(StreamDock):
             print(f"Error: {e}")
             return -1
 
-    # Set device key icon image 64 * 64
+    # Set device key icon image 64 * 64. PNG and JPEG input files are supported.
     def set_key_image(self, key, path):
         try:
             if isinstance(key, int):
@@ -154,9 +154,9 @@ class StreamDockM3(StreamDock):
             image = Image.open(path)
             image = to_native_key_format(self, image)
             temp_image_path = (
-                "rotated_key_image_" + str(random.randint(9999, 999999)) + ".jpg"
+                "rotated_key_image_" + str(random.randint(9999, 999999)) + ".png"
             )
-            image.save(temp_image_path)
+            image.save(temp_image_path, "PNG")
 
             # encode send
             path_bytes = temp_image_path.encode("utf-8")
@@ -168,6 +168,7 @@ class StreamDockM3(StreamDock):
         except Exception as e:
             print(f"Error: {e}")
             return -1
+
     def set_frame_background(self, path):
         try:
             if not os.path.exists(path):
@@ -196,9 +197,10 @@ class StreamDockM3(StreamDock):
         except Exception as e:
             print(f"Error: {e}")
             return -1
+
     def set_key_imageData(self, key, path):
         pass
-    
+
     def magnetic_calibration(self):
         """Perform magnetic calibration."""
         self.transport.magnetic_calibration()
@@ -210,7 +212,7 @@ class StreamDockM3(StreamDock):
     def key_image_format(self):
         return {
             "size": (96, 96),
-            "format": "JPEG",
+            "format": "PNG",
             "rotation": 90,
             "flip": (False, False),
         }
@@ -227,4 +229,5 @@ class StreamDockM3(StreamDock):
     def set_device(self):
         self.transport.set_report_size(513, 1025, 0)
         self.feature_option.deviceType = device_type.dock_m3
+        self.feature_option.supportBackgroundGif = True
         pass

@@ -1,5 +1,6 @@
 from StreamDock.FeatrueOption import device_type
 from .StreamDock import StreamDock
+from ..DeviceConfig import StreamDockXLConfig
 from ..InputTypes import InputEvent, ButtonKey, EventType, KnobId, Direction
 from PIL import Image
 import ctypes
@@ -56,6 +57,7 @@ class StreamDockXL(StreamDock):
 
     def __init__(self, transport1, devInfo):
         super().__init__(transport1, devInfo)
+        self.config = StreamDockXLConfig()
 
     def get_image_key(self, logical_key: ButtonKey) -> int:
         """
@@ -168,7 +170,7 @@ class StreamDockXL(StreamDock):
             print(f"Error: {e}")
             return -1
 
-    # Set device key icon image 80 * 80
+    # Set device key icon image 80 * 80. PNG and JPEG input files are supported.
     def set_key_image(self, key, path):
         try:
             if isinstance(key, int):
@@ -194,9 +196,9 @@ class StreamDockXL(StreamDock):
             image = Image.open(path)
             image = to_native_key_format(self, image)
             temp_image_path = (
-                "rotated_key_image_" + str(random.randint(9999, 999999)) + ".jpg"
+                "rotated_key_image_" + str(random.randint(9999, 999999)) + ".png"
             )
-            image.save(temp_image_path)
+            image.save(temp_image_path, "PNG")
 
             # encode send
             path_bytes = temp_image_path.encode("utf-8")
@@ -220,7 +222,7 @@ class StreamDockXL(StreamDock):
     def key_image_format(self):
         return {
             "size": (80, 80),
-            "format": "JPEG",
+            "format": "PNG",
             "rotation": 180,
             "flip": (False, False),
         }
@@ -239,4 +241,6 @@ class StreamDockXL(StreamDock):
         self.feature_option.hasRGBLed = True
         self.feature_option.ledCounts = 6
         self.feature_option.deviceType = device_type.dock_xl
+        self.feature_option.supportBackgroundGif = True
+        self.feature_option.supportConfig = True
         pass
