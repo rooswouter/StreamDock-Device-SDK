@@ -13,6 +13,7 @@ from typing import Optional, Sequence
 from ..FeatrueOption import FeatrueOption, device_type
 from ..Transport.LibUSBHIDAPI import LibUSBHIDAPI
 from ..InputTypes import InputEvent, ButtonKey, EventType
+from ..DeviceConfigEvent import DeviceConfigEvent
 from .GifController import GifController
 
 
@@ -77,6 +78,7 @@ class StreamDock(ABC):
         self.config = None
         self.gif_controller = GifController(self)
         self.key_callback = None
+        self.config_callback = None
         self.raw_read_callback = None
         self.raw_read_callback_async = False
         self.touchscreen_callback = None
@@ -486,6 +488,19 @@ class StreamDock(ABC):
         """
         pass
 
+    @abstractmethod
+    def decode_device_config_event(self, data: bytes) -> DeviceConfigEvent:
+        """
+        Decode Device Configuration events, as from the K1Pro when in native keyboard mode
+
+        Args:
+            data String containing the configuration event (in JSON format)
+
+        Returns:
+            DeviceConfigEvent: Decoded event object
+        """
+        pass
+
     def id(self):
         """
         Retrieves the physical ID of the attached StreamDock. This can be used
@@ -539,6 +554,34 @@ class StreamDock(ABC):
                             except Exception as decode_error:
                                 print(f"Event decode error: {decode_error}", flush=True)
                                 traceback.print_exc()
+                        elif self._is_input_device_config_packet(arr):
+                            try:
+                                # Skip first 12 bytes from the header, and strip all zeros 
+                                json_str = bytes(arr[12:]).rstrip(b"\x00")
+                                #print(f"Read data: {json_str}", flush=True)
+                    
+                                event = self.decode_device_config_event(json_str)
+                                #print(f"Device config event: {event}", flush=True)
+
+                                 # Get callback reference with lock
+                                with self._callback_lock:
+                                    callback = self.config_callback
+
+                                # Call callback OUTSIDE of lock to avoid deadlocks
+                                if callback is not None:
+                                    try:
+                                        # Callback signature: callback(device, event)
+                                        callback(self, event)
+                                    except Exception as callback_error:
+                                        print(
+                                            f"Device Config callback error: {callback_error}",
+                                            flush=True,
+                                        )
+                                        traceback.print_exc()
+
+                            except Exception as decode_error:
+                                print(f"Event decode error: {decode_error}", flush=True)
+                                traceback.print_exc()
                     # else:
                     #     print("read control", arr)
                     # Don't explicitly delete arr - let Python's GC handle it
@@ -574,6 +617,23 @@ class StreamDock(ABC):
             and data[5] == 0x4F
             and data[6] == 0x4B
         )
+
+    def _is_input_device_config_packet(self, data):
+        # Checks if the packet is a configuration packet, as send by the K1Pro when in native keyboard mode
+        # message is \x04DEVCFG
+        if self.feature_option.deviceType == device_type.k1pro:
+            return (
+                len(data) >= 12
+                and data[0] == 0x04
+                and data[1] == 0x44
+                and data[2] == 0x45
+                and data[3] == 0x56
+                and data[4] == 0x43
+                and data[5] == 0x46
+                and data[6] == 0x47
+            )
+        # only for K1Pro?
+        return False
 
     def _handle_raw_read(self, data):
         with self._callback_lock:
@@ -764,3 +824,49 @@ class StreamDock(ABC):
             asyncio.run_coroutine_threadsafe(async_callback(*args), loop)
 
         self.set_touchscreen_callback(callback)
+
+
+    def set_config_callback(self, callback):
+        """
+        Sets the callback function called each time a config event is created on the StreamDock
+        Config Events are sent by the K1Pro when in native keyboard mode
+
+        .. note:: This callback will be fired from an internal reader thread.
+                Ensure that the given callback function is thread-safe.
+
+        .. note:: Only one callback can be registered at one time.
+
+        .. seealso:: See :func:`~StreamDock.set_key_callback_async` method for
+                    a version compatible with Python 3 `asyncio` asynchronous
+                    functions.
+
+        :param function callback: Callback function with signature:
+                                callback(device: StreamDock, event: DeviceConfigEvent)
+        """
+        with self._callback_lock:
+            self.config_callback = callback
+
+    def set_config_callback_async(self, async_callback, loop=None):
+        """
+        Sets the asynchronous function called each time a config event is created on the StreamDock
+        Config Events are sent by the K1Pro when in native keyboard mode. The given callback
+        should be compatible with Python 3's `asyncio` routines.
+
+        .. note:: The asynchronous callback will be fired in a thread-safe
+                    manner.
+
+        .. note:: This will override the callback (if any) set by
+                    :func:`~StreamDock.set_key_callback`.
+
+        :param function async_callback: Asynchronous callback function with signature:
+                                        async_callback(device: StreamDock, event: InputEvent)
+        :param asyncio.loop loop: Asyncio loop to dispatch the callback into
+        """
+        import asyncio
+
+        loop = loop or asyncio.get_event_loop()
+
+        def callback(*args):
+            asyncio.run_coroutine_threadsafe(async_callback(*args), loop)
+
+        self.set_config_callback(callback)

@@ -23,6 +23,9 @@ def key_callback(device, event):
         if event.event_type == EventType.BUTTON:
             action = "pressed" if event.state == 1 else "released"
             print(f"Key {event.key.value} {action}", flush=True)
+
+
+
         elif event.event_type == EventType.KNOB_ROTATE:
             print(
                 f"Knob {event.knob_id.value} rotated {event.direction.value}",
@@ -31,6 +34,9 @@ def key_callback(device, event):
         elif event.event_type == EventType.KNOB_PRESS:
             action = "pressed" if event.state == 1 else "released"
             print(f"Knob {event.knob_id.value} {action}", flush=True)
+            if event.state == 1 and event.knob_id.value == "knob_1":
+                device.keyboard_mode(0)
+
         elif event.event_type == EventType.SWIPE:
             print(f"Swipe gesture: {event.direction.value}", flush=True)
         elif event.event_type == EventType.DIP_SWITCH:
@@ -59,6 +65,13 @@ def touch_callback(device, event):
         import traceback
 
         traceback.print_exc()
+
+
+def config_callback(device, event):
+    if event.scr == 5:
+        device.keyboard_mode(1)
+        device.set_key_image(2, "img/maarten3.png")
+        device.refresh()
 
 
 def setup_device(device):
@@ -118,10 +131,11 @@ def setup_device(device):
     # K1Pro special function
     elif isinstance(device, K1Pro):
         device.set_keyboard_backlight_brightness(6)
-        device.set_keyboard_lighting_speed(3)
-        device.set_keyboard_lighting_effects(0)  # static
-        device.set_keyboard_rgb_backlight(255, 0, 0)
-        device.keyboard_os_mode_switch(0)  # windows mode
+        device.set_keyboard_lighting_speed(1)
+        device.set_keyboard_lighting_effects(1)  # static
+        device.set_keyboard_rgb_backlight(255, 255, 0)
+        device.keyboard_os_mode_switch(1)  # windows mode
+        device.set_config_callback(config_callback)
     # N1 special function
     elif isinstance(device, StreamDockN1):
         device.switch_mode(device.DeviceMode.KEYBOARD)
@@ -156,19 +170,22 @@ def setup_device(device):
         # mini only set all colors
         device.set_led_color(0, 0, 255)
 
-    for i in device.image_keys():
-        if 0 == i % 3:
-            device.set_key_gif(i, "img/test.gif")
-        elif 1 == i % 3:
-            device.set_key_image(i, "img/button_test.jpg")
-        elif 2 == i % 3:
-            device.set_key_image(i, "img/mark.png")
 
+    for i in device.image_keys():
+        pass
+    device.set_key_image(1, "img/maarten3.png")
+    
     device.start_gif_loop()
     device.start_animation_loop()
     # Set key event callback
     device.set_key_callback(key_callback)
 
+    device.set_keyboard_backlight_brightness(100)
+    device.set_keyboard_lighting_speed(2)
+    device.set_keyboard_lighting_effects(2)  # static
+    device.set_keyboard_rgb_backlight(255, 255, 255)
+    device.keyboard_os_mode_switch(0)  # windows mode
+        
 
 def device_added_callback(device):
     print(f"[hotplug] Device added: {device.path}", flush=True)

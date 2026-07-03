@@ -356,9 +356,9 @@ class LibUSBHIDAPI:
         Set the keyboard backlight brightness.
 
         Args:
-            brightness: Brightness value (0-6)
+            brightness: Brightness value (0-100)
         """
-        assert 0 <= brightness <= 6
+        assert 0 <= brightness <= 100
         self._crt("LLUM", struct.pack(">H", brightness))
 
     def set_keyboard_lighting_effects(self, effect: int):

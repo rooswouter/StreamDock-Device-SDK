@@ -1,13 +1,14 @@
 from StreamDock.FeatrueOption import device_type
 from .StreamDock import StreamDock
 from ..InputTypes import InputEvent, ButtonKey, EventType, KnobId, Direction
+from ..DeviceConfigEvent import DeviceConfigEvent
 from PIL import Image
 import ctypes
 import ctypes.util
 import os, io
 from ..ImageHelpers.PILHelper import *
 import random
-
+import time
 
 class K1Pro(StreamDock):
     """K1Pro device class - supports 6 keys and 3 knobs"""
@@ -100,6 +101,9 @@ class K1Pro(StreamDock):
         # Unknown event
         return InputEvent(event_type=EventType.UNKNOWN)
 
+    def decode_device_config_event(self, data: bytes) -> DeviceConfigEvent:
+        return DeviceConfigEvent(data.decode("utf-8"))
+
     # Set device screen brightness
     def set_brightness(self, percent):
         return self.transport.setBrightness(percent)
@@ -111,43 +115,36 @@ class K1Pro(StreamDock):
     # Set device key icon image 64 * 64
     def set_key_image(self, key, path):
         try:
-            if isinstance(key, int):
-                if key not in range(1, 7):
-                    print(f"key '{key}' out of range. you should set (1 ~ 6)")
-                    return -1
-                logical_key = ButtonKey(key)
-            else:
-                logical_key = key
-
-            if not os.path.exists(path):
-                print(f"Error: The image file '{path}' does not exist.")
-                return -1
-
-            # Get hardware key value
-            hardware_key = self.get_image_key(logical_key)
-
-            # open formatter
             image = Image.open(path)
-            image = to_native_key_format(self, image)
-            temp_image_path = (
-                "rotated_key_image_" + str(random.randint(9999, 999999)) + ".jpg"
-            )
-            image.save(temp_image_path)
-
-            # encode send
-            path_bytes = temp_image_path.encode("utf-8")
-            c_path = ctypes.c_char_p(path_bytes)
-            res = self.transport.setKeyImgDualDevice(c_path, hardware_key)
-            os.remove(temp_image_path)
-            return res
+            return self.set_key_imageData(key, image)
 
         except Exception as e:
             print(f"Error: {e}")
             return -1
 
-    # TODO
-    def set_key_imageData(self, key, path):
-        pass
+
+    def set_key_imageData(self, key, image):
+        try:
+            if isinstance(key, int):
+                if key not in range(1, 7):
+                    print(f"key '{key}' out of range. you should set (1 ~ 6)")
+                    return -1
+                    logical_key = ButtonKey(key)
+                else:
+                    logical_key = key
+
+                # Get hardware key value
+                hardware_key = self.get_image_key(logical_key)
+
+                rotated_image = to_native_key_format(self, image)
+                buffered = io.BytesIO()
+                rotated_image.save(buffered, "JPEG")
+                returnvalue = self.transport.set_key_image_stream(buffered.getvalue(), hardware_key)
+
+                return returnvalue
+        except Exception as e:
+            print(f"Error: {e}")
+            return -1
 
     # Get device serial number
     def get_serial_number(self):
@@ -223,3 +220,16 @@ class K1Pro(StreamDock):
             os_mode: OS mode identifier
         """
         self.transport.keyboard_os_mode_switch(os_mode)
+
+    def keyboard_mode(self, mode: int):
+        # mode 0 - default keyboard behaviour with insert / del keys
+        # mode 1 - Program mode with event callback handled by SDK
+        if mode == 0:
+            self.transport.disconnected()
+        elif mode == 1:
+            self.init()
+            time.sleep(0.1)
+            self.clearAllIcon()
+            self.refresh()
+        else:
+            raise ValueError(f"Invalid keyboard mode: {mode}")
