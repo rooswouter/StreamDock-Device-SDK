@@ -109,8 +109,6 @@ class LibUSBHIDAPI:
                     stuff = bytes([self._report_id])
                     padded_data = self._pad(stuff + bulk[i:i+self._report_size])
                     result = self._device.write(padded_data)
-                    if result != len(padded_data):
-                        print(f"Write error: {result} != {len(padded_data)}")
     # ------------------------------------------------------------------
     # Device lifecycle
     # ------------------------------------------------------------------

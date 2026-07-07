@@ -168,7 +168,7 @@ class K1Pro(StreamDock):
 
     # Set device parameters
     def set_device(self):
-        self.transport.set_report_size(513, 1025, 0)
+        self.transport.set_report_size(513, 1024, 0)
         self.transport.set_report_id(0x04)
         self.feature_option.deviceType = device_type.k1pro
         pass

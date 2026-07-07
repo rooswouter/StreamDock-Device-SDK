@@ -488,7 +488,6 @@ class StreamDock(ABC):
         """
         pass
 
-    @abstractmethod
     def decode_device_config_event(self, data: bytes) -> DeviceConfigEvent:
         """
         Decode Device Configuration events, as from the K1Pro when in native keyboard mode
