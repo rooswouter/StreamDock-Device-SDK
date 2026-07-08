@@ -46,11 +46,11 @@ InputEvent StreamDockN4Pro::decode_input_event(int hardware_code, int state) {
 
     ButtonKey secondary_key;
     switch (hardware_code) {
-        case 0x40: secondary_key = ButtonKey::KEY_11; break;
-        case 0x41: secondary_key = ButtonKey::KEY_12; break;
-        case 0x42: secondary_key = ButtonKey::KEY_13; break;
-        case 0x43: secondary_key = ButtonKey::KEY_14; break;
-        default: secondary_key = ButtonKey::KEY_1; break;
+        case 0x40: secondary_key = ButtonKey::BTN_11; break;
+        case 0x41: secondary_key = ButtonKey::BTN_12; break;
+        case 0x42: secondary_key = ButtonKey::BTN_13; break;
+        case 0x43: secondary_key = ButtonKey::BTN_14; break;
+        default: secondary_key = ButtonKey::BTN_1; break;
     }
     if (hardware_code >= 0x40 && hardware_code <= 0x43) {
         return InputEvent::button(secondary_key, DeviceKeyMaps::normalizeState(state));

@@ -45,39 +45,41 @@ enum class EventType {
 #undef KEY_9
 #endif
 
+// NOTE: Teensyduino's core defines KEY_0..KEY_9 as macros (USB keycodes).
+// Using BTN_* avoids macro collisions in user sketches and core headers.
 enum class ButtonKey : int {
-    KEY_1 = 1,
-    KEY_2,
-    KEY_3,
-    KEY_4,
-    KEY_5,
-    KEY_6,
-    KEY_7,
-    KEY_8,
-    KEY_9,
-    KEY_10,
-    KEY_11,
-    KEY_12,
-    KEY_13,
-    KEY_14,
-    KEY_15,
-    KEY_16,
-    KEY_17,
-    KEY_18,
-    KEY_19,
-    KEY_20,
-    KEY_21,
-    KEY_22,
-    KEY_23,
-    KEY_24,
-    KEY_25,
-    KEY_26,
-    KEY_27,
-    KEY_28,
-    KEY_29,
-    KEY_30,
-    KEY_31,
-    KEY_32,
+    BTN_1 = 1,
+    BTN_2,
+    BTN_3,
+    BTN_4,
+    BTN_5,
+    BTN_6,
+    BTN_7,
+    BTN_8,
+    BTN_9,
+    BTN_10,
+    BTN_11,
+    BTN_12,
+    BTN_13,
+    BTN_14,
+    BTN_15,
+    BTN_16,
+    BTN_17,
+    BTN_18,
+    BTN_19,
+    BTN_20,
+    BTN_21,
+    BTN_22,
+    BTN_23,
+    BTN_24,
+    BTN_25,
+    BTN_26,
+    BTN_27,
+    BTN_28,
+    BTN_29,
+    BTN_30,
+    BTN_31,
+    BTN_32,
 };
 
 enum class KnobId {
@@ -99,7 +101,7 @@ enum class Direction {
 
 struct InputEvent {
     EventType event_type = EventType::UNKNOWN;
-    ButtonKey key = ButtonKey::KEY_1;
+    ButtonKey key = ButtonKey::BTN_1;
     bool has_key = false;
     KnobId knob_id = KnobId::KNOB_1;
     bool has_knob_id = false;

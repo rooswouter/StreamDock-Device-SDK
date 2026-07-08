@@ -81,12 +81,12 @@ static const unsigned long INIT_STEP_MS = 100;
 
 static const char *buttonKeyName(ButtonKey key) {
   switch (key) {
-    case ButtonKey::KEY_1: return "KEY_1";
-    case ButtonKey::KEY_2: return "KEY_2";
-    case ButtonKey::KEY_3: return "KEY_3";
-    case ButtonKey::KEY_4: return "KEY_4";
-    case ButtonKey::KEY_5: return "KEY_5";
-    case ButtonKey::KEY_6: return "KEY_6";
+    case ButtonKey::BTN_1: return "BTN_1";
+    case ButtonKey::BTN_2: return "BTN_2";
+    case ButtonKey::BTN_3: return "BTN_3";
+    case ButtonKey::BTN_4: return "BTN_4";
+    case ButtonKey::BTN_5: return "BTN_5";
+    case ButtonKey::BTN_6: return "BTN_6";
     default: return "?";
   }
 }
