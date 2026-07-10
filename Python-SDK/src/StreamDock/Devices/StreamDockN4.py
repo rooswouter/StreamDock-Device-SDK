@@ -1,6 +1,6 @@
 from StreamDock.FeatrueOption import device_type
 from .StreamDock import StreamDock
-from ..InputTypes import InputEvent, ButtonKey, EventType
+from ..InputTypes import InputEvent, ButtonKey, EventType,KnobId, Direction
 from PIL import Image
 import ctypes
 import ctypes.util
@@ -63,13 +63,70 @@ class StreamDockN4(StreamDock):
         normalized_state = 1 if state == 0x01 else 0
 
         # Regular button events (1-14)
-        if hardware_code in self._HW_TO_LOGICAL_KEY:
+       
+        if hardware_code in range(1, 15):
             return InputEvent(
                 event_type=EventType.BUTTON,
-                key=self._HW_TO_LOGICAL_KEY[hardware_code],
+                key=ButtonKey(hardware_code),
                 state=normalized_state
             )
 
+        # Knob rotation event
+        knob_rotate_map = {
+            0xA0: (KnobId.KNOB_1, Direction.LEFT),
+            0xA1: (KnobId.KNOB_1, Direction.RIGHT),
+            0x50: (KnobId.KNOB_2, Direction.LEFT),
+            0x51: (KnobId.KNOB_2, Direction.RIGHT),
+            0x90: (KnobId.KNOB_3, Direction.LEFT),
+            0x91: (KnobId.KNOB_3, Direction.RIGHT),
+            0x70: (KnobId.KNOB_4, Direction.LEFT),
+            0x71: (KnobId.KNOB_4, Direction.RIGHT),
+
+        }
+        if hardware_code in knob_rotate_map:
+            knob_id, direction = knob_rotate_map[hardware_code]
+            return InputEvent(
+                event_type=EventType.KNOB_ROTATE, knob_id=knob_id, direction=direction
+            )
+        # Knob press event
+        knob_press_map = {
+            0x37: KnobId.KNOB_1,
+            0x35: KnobId.KNOB_2,
+            0x33: KnobId.KNOB_3,
+            0x36: KnobId.KNOB_4,
+            
+        }
+        if hardware_code in knob_press_map:
+            return InputEvent(
+                event_type=EventType.KNOB_PRESS,
+                knob_id=knob_press_map[hardware_code],
+                state=normalized_state,
+            )
+
+
+        # Secondary screen key events
+        secondary_key_map = {
+            0x40: ButtonKey.KEY_1,
+            0x41: ButtonKey.KEY_2,
+            0x42: ButtonKey.KEY_3,
+            0x43: ButtonKey.KEY_4,
+        }
+        if hardware_code in secondary_key_map:
+            return InputEvent(
+                event_type=EventType.BUTTON,
+                key=secondary_key_map[hardware_code],
+                state=normalized_state,
+            )
+
+        # Swipe gesture
+        if hardware_code == 0x38:
+            return InputEvent(event_type=EventType.SWIPE, direction=Direction.LEFT)
+        if hardware_code == 0x39:
+            return InputEvent(event_type=EventType.SWIPE, direction=Direction.RIGHT)
+        if hardware_code == 0xb1:
+            return InputEvent(event_type=EventType.SWIPE, direction=Direction.UP)
+        if hardware_code == 0xb2:
+            return InputEvent(event_type=EventType.SWIPE, direction=Direction.DOWN)
         # Unknown event
         return InputEvent(event_type=EventType.UNKNOWN)
 
@@ -118,7 +175,7 @@ class StreamDockN4(StreamDock):
 
             # Secondary screen keys 11-14
             if logical_key.value in range(11, 15):
-                return self.set_seondscreen_image(logical_key.value, path)
+                return self.set_secondscreen_image(logical_key.value, path)
 
             # Get hardware key value
             hardware_key = self.get_image_key(logical_key)
@@ -141,7 +198,7 @@ class StreamDockN4(StreamDock):
             return -1
 
     # Set device secondary screen key icon image 176 * 112
-    def set_seondscreen_image(self, key, path):
+    def set_secondscreen_image(self, key, path):
         try:
             if key not in range(11, 15):
                 print(f"key '{key}' out of range. you should set (11 ~ 14)")
