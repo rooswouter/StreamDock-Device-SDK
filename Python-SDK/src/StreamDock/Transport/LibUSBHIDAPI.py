@@ -96,6 +96,7 @@ class LibUSBHIDAPI:
         """
         if crt is None:
             crt = bytes([self._report_id])  + b"CRT\x00\x00"
+            crt = bytes([self._report_id])  + b"CRT\x00\x00"
         with self._write_lock:
             if self._device is None:
                 return
@@ -388,7 +389,7 @@ class LibUSBHIDAPI:
             green: Green component (0-255)
             blue: Blue component (0-255)
         """
-        self._crt("COLOR", struct.pack(">6B", 0, 0, 0, red, green, blue))
+        self._crt("COLOR", struct.pack(">4B", 1, red, green, blue))
 
     def keyboard_os_mode_switch(self, os_mode: int) -> None:
         """
