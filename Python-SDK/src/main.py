@@ -68,6 +68,7 @@ def touch_callback(device, event):
 
 
 def config_callback(device, event):
+    print(f"Config event: {event}", flush=True)
     if event.scr == 5:
         device.keyboard_mode(1)
         device.set_key_image(2, "img/maarten3.png")
@@ -130,10 +131,10 @@ def setup_device(device):
         time.sleep(2)
     # K1Pro special function
     elif isinstance(device, K1Pro):
-        device.set_keyboard_backlight_brightness(6)
-        device.set_keyboard_lighting_speed(1)
-        device.set_keyboard_lighting_effects(1)  # static
-        device.set_keyboard_rgb_backlight(255, 255, 0)
+        device.set_keyboard_backlight_brightness(100)
+        device.set_keyboard_lighting_speed(0)
+        device.set_keyboard_lighting_effects(0)  # static
+        device.set_keyboard_rgb_backlight(255, 255, 255)
         device.keyboard_os_mode_switch(1)  # windows mode
         device.set_config_callback(config_callback)
     # N1 special function
@@ -171,20 +172,21 @@ def setup_device(device):
         device.set_led_color(0, 0, 255)
 
 
+    device.clearAllIcon()
     for i in device.image_keys():
-        pass
-    device.set_key_image(1, "img/maarten3.png")
+        if 0 == i % 3:
+            device.set_key_gif(i, "img/test.gif")
+        elif 1 == i % 3:
+            device.set_key_image(i, "img/button_test.jpg")
+        elif 2 == i % 3:
+            device.set_key_image(i, "img/test.png")
     
+    device.refresh()
+
     device.start_gif_loop()
     device.start_animation_loop()
     # Set key event callback
     device.set_key_callback(key_callback)
-
-    device.set_keyboard_backlight_brightness(100)
-    device.set_keyboard_lighting_speed(2)
-    device.set_keyboard_lighting_effects(2)  # static
-    device.set_keyboard_rgb_backlight(255, 255, 255)
-    device.keyboard_os_mode_switch(0)  # windows mode
         
 
 def device_added_callback(device):
