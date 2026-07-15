@@ -77,6 +77,11 @@ class Direction(Enum):
     DOWN = "down"
 
 
+class DIPSwitchId(Enum):
+    """DIP switch ID enum"""
+    DIP_1 = "dip_1"
+    DIP_2 = "dip_2"
+
     
 
 @dataclass
