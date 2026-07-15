@@ -1,12 +1,34 @@
 # StreamDock Python SDK
 
+Pure python version using hidapi for all communication with MiraBox devices, no longer requiring the compiled transport libraries.
+The transport API is kept the same, so it is fully compatible with existing MiraBox SDK Code.
 ## Supported Platforms
 
 | Platform           | Support Status | Description                                                 |
 | ------------------ | -------------- | ----------------------------------------------------------- |
-| Linux (x64, arm64) | ✅ Supported   | Ubuntu 20.04+ recommends using pyudev for device monitoring |
-| Windows (x64)      | ✅ Supported   | Supports WMI and polling mode                               |
-| macOS (x64, arm64) | ✅ Supported   | Uses polling mode for device monitoring                     |
+| Linux (x64, arm64) | ✅ Supported   | Tested                                                      |
+| Windows (x64)      | ✅ Supported   | Tested                                                      |
+| macOS (x64, arm64) | ✅ Not tested  | Should work, not tested yet                                |
+
+## Supported Devices & functionality
+The hidapi transport implementation should support all devices, and keys, knobs and swipe have been tested.
+Setting of the backgrounds has not been verified yet.
+ but only the following devices were tested:
+| Platform                          | Test                                | Notes                               |
+| --------------------------------- | ----------------------------------- | ----------------------------------  |
+| K1Pro                             | ✅ Tested                           | Background not tested               |
+| StreamDock 293                    | ❓ Not Tested                       |                                     |
+| StreamDock 293s                   | ✅ Tested                           | Background not tested               |
+| StreamDock 293V3                  | ❓ Not Tested                       |                                     |
+| StreamDock 293sV3                 | ❓ Not Tested                       |                                     |
+| StreamDock M3                     | ❓ Not Tested                       |                                     |
+| StreamDock M18                    | ❓ Not Tested                       |                                     |
+| StreamDock Mini                   | ❓ Not Tested                       |                                     |
+| StreamDock N1                     | ❓ Not Tested                       |                                     |
+| StreamDock N3                     | ✅ Tested                           |  Background not sted                |
+| StreamDock N4                     | ✅ Tested                           |  Background not tested              |
+| StreamDock N4Pro                  | ❓ Not Tested                       |                                     |
+| StreamDock XL                     | ❓ Not Tested                       |                                     |
 
 ## Installation Guide
 
@@ -20,17 +42,8 @@
 pip install -r requirements.txt
 ```
 
-#### 2. System Library Dependencies
 
-```bash
-sudo apt install -y libudev-dev libusb-1.0-0-dev libhidapi-libusb0
-```
-
-> ⚠️ **Important**:
->
-> Must install `libusb-1.0-0-dev` before installing `libhidapi-libusb0`
-
-#### 3. Permission Issues
+#### 2. Permission Issues
 
 On some `Linux` systems, if user device permissions have not been added, you need to run with `sudo` privileges, for example:
 
@@ -74,11 +87,6 @@ Windows 10/11 usually automatically installs the required drivers. If you encoun
 pip install -r requirements.txt
 ```
 
-#### 2. System Dependencies
-
-```bash
-brew install hidapi
-```
 
 ## Quick Start
 
