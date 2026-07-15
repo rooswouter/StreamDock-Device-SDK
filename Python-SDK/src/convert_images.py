@@ -2,8 +2,11 @@
 """
 Convert images for Mirabox / StreamDock devices.
 
-Resizes and rotates each source image per device format settings and writes JPEG
-files to output_dir/<DeviceName>/key/, touchscreen/, and secondscreen/ (if supported).
+Resizes and rotates each source image per device format settings and writes files
+to output_dir/<DeviceName>/key/, touchscreen/, and secondscreen/ (if supported).
+
+Static images are saved as JPEG. Animated GIFs are saved as GIF with all frames
+processed and original timing preserved.
 """
 
 from __future__ import annotations
@@ -13,7 +16,7 @@ import copy
 import sys
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageSequence
 
 from StreamDock.ImageHelpers.PILHelper import _to_native_format
 from StreamDock.ProductIDs import (
@@ -52,8 +55,8 @@ DEVICE_CLASSES = {
 
 FORMAT_TARGETS = (
     ("key", "key_image_format"),
-    ("touchscreen", "touchscreen_image_format"),
-    ("secondscreen", "secondscreen_image_format"),
+    #("touchscreen", "touchscreen_image_format"),
+    #("secondscreen", "secondscreen_image_format"),
 )
 
 
@@ -107,11 +110,55 @@ def get_device_formats(device_class) -> list[tuple[str, dict]]:
     return formats
 
 
-def convert_image(image: Image.Image, image_format: dict, jpeg_quality: int) -> Image.Image:
-    converted = _to_native_format(image.copy(), copy.deepcopy(image_format))
+def is_animated_gif(path: Path) -> bool:
+    if path.suffix.lower() != ".gif":
+        return False
+    with Image.open(path) as image:
+        return getattr(image, "n_frames", 1) > 1
+
+
+def convert_image(image: Image.Image, image_format: dict) -> Image.Image:
+    fmt = copy.deepcopy(image_format)
+    fmt["format"] = "JPEG"
+    converted = _to_native_format(image.copy(), fmt)
     if converted.mode != "RGB":
         converted = converted.convert("RGB")
     return converted
+
+
+def convert_gif_frame(frame: Image.Image, image_format: dict) -> Image.Image:
+    fmt = copy.deepcopy(image_format)
+    fmt["format"] = "PNG"
+    return _to_native_format(frame.convert("RGBA"), fmt)
+
+
+def save_animated_gif(
+    source_path: Path,
+    output_path: Path,
+    image_format: dict,
+) -> None:
+    with Image.open(source_path) as image:
+        frames: list[Image.Image] = []
+        durations: list[int] = []
+
+        for frame in ImageSequence.Iterator(image):
+            converted = convert_gif_frame(frame, image_format)
+            frames.append(converted.convert("RGB"))
+            durations.append(max(1, int(frame.info.get("duration", 100))))
+
+        loop = image.info.get("loop", 0)
+
+    if not frames:
+        raise ValueError(f"No frames found in animated GIF: {source_path}")
+
+    frames[0].save(
+        output_path,
+        save_all=True,
+        append_images=frames[1:],
+        duration=durations,
+        loop=loop,
+        disposal=2,
+    )
 
 
 def convert_for_device(
@@ -140,11 +187,15 @@ def convert_for_device(
         )
 
         for source_path in source_images:
-            with Image.open(source_path) as image:
-                converted = convert_image(image, image_format, jpeg_quality)
+            if is_animated_gif(source_path):
+                output_path = target_dir / f"{source_path.stem}.gif"
+                save_animated_gif(source_path, output_path, image_format)
+            else:
+                with Image.open(source_path) as image:
+                    converted = convert_image(image, image_format)
 
-            output_path = target_dir / f"{source_path.stem}.jpg"
-            converted.save(output_path, "JPEG", quality=jpeg_quality)
+                output_path = target_dir / f"{source_path.stem}.jpg"
+                converted.save(output_path, "JPEG", quality=jpeg_quality)
             written += 1
 
     return written
@@ -154,7 +205,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Resize and rotate images for Mirabox / StreamDock devices. "
-            "Outputs JPEG files to output_dir/<DeviceName>/."
+            "Outputs JPEG files (or GIF for animated GIFs) to output_dir/<DeviceName>/."
         )
     )
     parser.add_argument("input_dir", type=Path, help="Directory containing source images")
